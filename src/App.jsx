@@ -72,6 +72,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [me, setMe] = useState(null);
 
   const loadLogs = async () => {
     setLoading(true);
@@ -86,7 +87,18 @@ export default function App() {
     }
   };
 
+  const loadMe = async () => {
+    try {
+      const response = await fetch("/api/me");
+      const data = await response.json();
+      setMe(data);
+    } catch {
+      setMe({ authenticated: false });
+    }
+  };
+
   useEffect(() => {
+    loadMe();
     loadLogs();
   }, []);
 
