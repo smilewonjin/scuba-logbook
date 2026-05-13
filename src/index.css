@@ -49,6 +49,15 @@ body {
   color: #00111f;
   text-decoration: none;
   font-weight: bold;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.2s ease;
+}
+
+.main-action:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
 }
 
 .panel {
@@ -72,10 +81,22 @@ body {
   font-size: 32px;
 }
 
+.row-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .log-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.form-subtitle {
+  margin-top: 12px;
+  color: #7dd3fc;
+  font-size: 20px;
 }
 
 .form-grid {
@@ -92,7 +113,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid #334155;
   background: #0f172a;
@@ -122,6 +144,13 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.small-button {
+  height: fit-content;
+  background: #1e293b;
+  color: #e0f2fe;
+  border: 1px solid #334155;
+}
+
 .message {
   margin-top: 20px;
   color: #7dd3fc;
@@ -149,6 +178,10 @@ button:disabled {
   padding: 20px;
 }
 
+.log-detail {
+  flex: 1;
+}
+
 .log-item strong {
   display: block;
   font-size: 22px;
@@ -171,36 +204,166 @@ button:disabled {
   line-height: 1.5;
 }
 
-.delete-button,
-.small-button {
-  height: fit-content;
-}
-
-.row-title {
+.log-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.photo-preview img,
-.log-photo {
-  width: 180px;
-  height: 120px;
+.detail-button {
+  background: #38bdf8;
+  color: #00111f;
+}
+
+.edit-button {
+  background: #facc15;
+  color: #1f2937;
+}
+
+.delete-button {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.photo-preview img {
+  width: 240px;
+  height: 160px;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 16px;
 }
 
 .photo-preview {
   margin-top: -8px;
 }
 
-.log-detail {
-  flex: 1;
+.photo-help {
+  color: #94a3b8;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.log-photo {
+  width: 260px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 18px;
+}
+
+.log-photo-large {
+  width: 320px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 18px;
+}
+
+.detail-panel {
+  border: 1px solid #1e3a8a;
+}
+
+.detail-photo {
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  border-radius: 22px;
+  margin-bottom: 28px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.info-item {
+  background: #0f172a;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.info-item span {
+  color: #7dd3fc;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.info-item strong {
+  color: white;
+  font-size: 16px;
+}
+
+.checkbox-grid,
+.check-view-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.check-item {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.check-item input {
+  width: auto;
+}
+
+.check-view {
+  margin-top: 28px;
+}
+
+.check-view h3 {
+  color: #7dd3fc;
+  margin-bottom: 14px;
+}
+
+.check-view-grid span {
+  background: #0f172a;
+  color: #94a3b8;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.check-view-grid span.checked {
+  color: #7dd3fc;
+}
+
+.memo-box {
+  margin-top: 28px;
+  background: #0f172a;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.memo-box h3 {
+  color: #7dd3fc;
+  margin-bottom: 12px;
+}
+
+.memo-box p {
+  color: #cbd5e1;
+  line-height: 1.6;
 }
 
 @media (max-width: 768px) {
+  .page {
+    padding: 40px 16px;
+  }
+
   .hero-simple h1 {
     font-size: 42px;
+  }
+
+  .hero-description {
+    font-size: 17px;
+  }
+
+  .panel {
+    padding: 22px;
   }
 
   .form-grid {
@@ -215,5 +378,30 @@ button:disabled {
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
+  }
+
+  .log-photo,
+  .log-photo-large {
+    width: 100%;
+    height: 240px;
+  }
+
+  .photo-preview img {
+    width: 100%;
+    height: 220px;
+  }
+
+  .detail-grid,
+  .checkbox-grid,
+  .check-view-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .log-actions {
+    width: 100%;
+  }
+
+  .log-actions button {
+    width: 100%;
   }
 }
