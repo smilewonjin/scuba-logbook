@@ -48,18 +48,25 @@ jobs:
         with:
           name: node-app
       
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6BB24873357D4BCDB7B2E00731F2DC8C }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F43254508AD743DCA9823C58B92448C7 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E6DB16FF5DAB4C2984DD3E4AF43941CF }}
+#      - name: Login to Azure
+#        uses: azure/login@v2
+#        with:
+#          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6BB24873357D4BCDB7B2E00731F2DC8C }}
+#          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F43254508AD743DCA9823C58B92448C7 }}
+#          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E6DB16FF5DAB4C2984DD3E4AF43941CF }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'dive'
-          slot-name: 'Production'
+          app-name: dive
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .
+          
+#      - name: 'Deploy to Azure Web App'
+#        id: deploy-to-webapp
+#        uses: azure/webapps-deploy@v3
+#        with:
+#          app-name: 'dive'
+#          slot-name: 'Production'
+#          package: .
           
