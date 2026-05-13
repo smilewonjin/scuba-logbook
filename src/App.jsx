@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Camera, Clock3, Gauge, MapPin, Plus, Search, Star, Thermometer, Waves } from "lucide-react";
 import { motion } from "framer-motion";
 import "./index.css";
@@ -39,15 +39,20 @@ const initialTrips = [
   },
 ];
 
-const recentDives = [
+const sampleDives = [
   { site: "Moalboal Sardine Run", date: "2026.05.01", depth: "28m", time: "47min", temp: "27°C", type: "Fun Dive", memo: "정어리 떼와 거북이를 본 다이빙" },
   { site: "Pescador Island", date: "2026.05.02", depth: "31m", time: "50min", temp: "26°C", type: "Drift", memo: "조류가 약간 있었지만 시야가 좋았음" },
   { site: "Seogwipo Boat Point", date: "2026.06.13", depth: "18m", time: "42min", temp: "21°C", type: "Training", memo: "중성부력 연습과 사진 촬영" },
 ];
 
+const STORAGE_KEY = "scuba-logbook-dives";
+
 export default function App() {
   const [query, setQuery] = useState("");
-  const [logs, setLogs] = useState(recentDives);
+  const [logs, setLogs] = useState(() => {
+    const savedLogs = localStorage.getItem(STORAGE_KEY);
+    return savedLogs ? JSON.parse(savedLogs) : sampleDives;
+  });
   const [form, setForm] = useState({ site: "", date: "", depth: "", time: "", temp: "", type: "Fun Dive", memo: "" });
 
   const trips = useMemo(() => {
@@ -55,7 +60,11 @@ export default function App() {
     return initialTrips.filter((trip) => `${trip.title} ${trip.country} ${trip.region} ${trip.tags.join(" ")}`.toLowerCase().includes(keyword));
   }, [query]);
 
-  const totalDives = initialTrips.reduce((sum, trip) => sum + trip.dives, 0) + logs.length;
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+  }, [logs]);
+
+  const totalDives = logs.length;
   const maxDepth = Math.max(...initialTrips.map((trip) => trip.maxDepth));
 
   const handleChange = (event) => {
@@ -69,6 +78,7 @@ export default function App() {
 
     setLogs((prev) => [
       {
+        id: crypto.randomUUID(),
         site: form.site,
         date: form.date || new Date().toISOString().slice(0, 10),
         depth: form.depth ? `${form.depth}m` : "-",
@@ -81,6 +91,17 @@ export default function App() {
     ]);
 
     setForm({ site: "", date: "", depth: "", time: "", temp: "", type: "Fun Dive", memo: "" });
+  };
+
+  const handleDelete = (idOrIndex) => {
+    setLogs((prev) => prev.filter((log, index) => (log.id || index) !== idOrIndex));
+  };
+
+  const handleResetSample = () => {
+    setLogs(sampleDives);
+  };
+
+  return (e", memo: "" });
   };
 
   return (
@@ -191,15 +212,18 @@ export default function App() {
               <textarea name="memo" value={form.memo} onChange={handleChange} placeholder="본 생물, 컨디션, 장비 이슈, 느낌 등을 기록하세요." />
               <button type="submit">로그 추가하기</button>
             </form>
-            <p className="notice">현재 입력 데이터는 브라우저 화면에서만 임시 반영됩니다. 다음 단계에서 DB 저장을 붙이면 영구 저장됩니다.</p>
+            <p className="notice">현재 입력 데이터는 이 브라우저의 localStorage에 저장됩니다. PC/브라우저를 바꾸면 보이지 않으며, 다음 단계에서 DB 저장으로 변경할 수 있습니다.</p>
           </section>
 
           <section id="logs" className="log-panel">
             <span>Recent Dive Logs</span>
             <h2>최근 로그</h2>
+            <div className="log-actions">
+              <button type="button" onClick={handleResetSample}>샘플 로그로 초기화</button>
+            </div>
             <div className="log-list">
               {logs.map((log, index) => (
-                <article className="log-card" key={`${log.site}-${index}`}>
+                <article className="log-card" key={log.id || `${log.site}-${index}`}>
                   <div>
                     <h3>{log.site}</h3>
                     <p>{log.date} · {log.type}</p>
@@ -209,6 +233,7 @@ export default function App() {
                     <span><Gauge size={15} /> {log.depth}</span>
                     <span><Clock3 size={15} /> {log.time}</span>
                     <span><Thermometer size={15} /> {log.temp}</span>
+                    <button type="button" className="delete-log" onClick={() => handleDelete(log.id || index)}>삭제</button>
                   </div>
                 </article>
               ))}
