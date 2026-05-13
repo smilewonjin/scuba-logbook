@@ -25,6 +25,7 @@ function createTableClient() {
   if (!connectionString) {
     throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured.");
   }
+
   return TableClient.fromConnectionString(connectionString, TABLE_NAME);
 }
 
@@ -32,7 +33,10 @@ function createBlobContainerClient() {
   if (!connectionString) {
     throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured.");
   }
-  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+
+  const blobServiceClient =
+    BlobServiceClient.fromConnectionString(connectionString);
+
   return blobServiceClient.getContainerClient(BLOB_CONTAINER_NAME);
 }
 
@@ -44,7 +48,9 @@ app.get("/api/logs", async (req, res) => {
     const logs = [];
 
     for await (const entity of client.listEntities({
-      queryOptions: { filter: `PartitionKey eq 'DiveLog'` },
+      queryOptions: {
+        filter: `PartitionKey eq 'DiveLog'`,
+      },
     })) {
       logs.push({
         rowKey: entity.rowKey,
@@ -63,10 +69,14 @@ app.get("/api/logs", async (req, res) => {
     }
 
     logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     res.json({ logs });
   } catch (error) {
     console.error("GET /api/logs failed:", error);
-    res.status(500).json({ message: "Failed to load logs", error: error.message });
+    res.status(500).json({
+      message: "Failed to load logs",
+      error: error.message,
+    });
   }
 });
 
@@ -114,10 +124,16 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
 
     await tableClient.createEntity(entity);
 
-    res.status(201).json({ message: "Dive log saved" });
+    res.status(201).json({
+      message: "Dive log saved",
+      rowKey: entity.rowKey,
+    });
   } catch (error) {
     console.error("POST /api/logs failed:", error);
-    res.status(500).json({ message: "Failed to save log", error: error.message });
+    res.status(500).json({
+      message: "Failed to save log",
+      error: error.message,
+    });
   }
 });
 
@@ -125,10 +141,16 @@ app.delete("/api/logs/:rowKey", async (req, res) => {
   try {
     const client = createTableClient();
     await client.deleteEntity("DiveLog", req.params.rowKey);
-    res.json({ message: "Dive log deleted" });
+
+    res.json({
+      message: "Dive log deleted",
+    });
   } catch (error) {
     console.error("DELETE /api/logs failed:", error);
-    res.status(500).json({ message: "Failed to delete log", error: error.message });
+    res.status(500).json({
+      message: "Failed to delete log",
+      error: error.message,
+    });
   }
 });
 
