@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@azure/data-tables": "^13.3.2",
     "@tailwindcss/vite": "^4.3.0",
     "express": "^5.2.1",
     "framer-motion": "^12.38.0",
