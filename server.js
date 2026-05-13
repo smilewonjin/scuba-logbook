@@ -171,7 +171,7 @@ function buildEntity(body, rowKey, photoUrl, createdAt, user, profile) {
     userSlug: profile.slug,
 
     isPublic: body.isPublic === "true" ? "true" : "false",
-
+    
     date: body.date || "",
     location: body.location || "",
     diveSite: body.diveSite || "",
