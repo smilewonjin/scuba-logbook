@@ -405,3 +405,51 @@ button:disabled {
     width: 100%;
   }
 }
+
+.auth-box {
+  margin: 24px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #cbd5e1;
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.user-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 18px;
+  text-decoration: none;
+  color: white;
+}
+
+.user-card span {
+  color: #7dd3fc;
+}
+
+.user-card small {
+  color: #94a3b8;
+}
+
+.inline-link {
+  color: #7dd3fc;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .user-grid {
+    grid-template-columns: 1fr;
+  }
+}

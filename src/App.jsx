@@ -27,6 +27,7 @@ const emptyForm = {
   gasType: "Air",
   residualNitrogen: "",
   planFollowed: "yes",
+  isPublic: "true",
   memo: "",
 };
 
@@ -61,6 +62,10 @@ const defaultChecklist = (items) =>
 
 export default function App() {
   const [logs, setLogs] = useState([]);
+  const [me, setMe] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [pageProfile, setPageProfile] = useState(null);
+  const [isOwnerPage, setIsOwnerPage] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [equipmentChecklist, setEquipmentChecklist] = useState(defaultChecklist(equipmentItems));
   const [planChecklist, setPlanChecklist] = useState(defaultChecklist(planItems));
@@ -70,20 +75,22 @@ export default function App() {
   const [selectedLog, setSelectedLog] = useState(null);
   const [keepExistingPhoto, setKeepExistingPhoto] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [me, setMe] = useState(null);
 
-  const loadLogs = async () => {
-    setLoading(true);
+  const currentPath = window.location.pathname;
+  const userPageMatch = currentPath.match(/^\/u\/([^/]+)$/);
+  const isUserPage = !!userPageMatch;
+  const isMePage = currentPath === "/me";
+  const isHomePage = currentPath === "/";
+
+  const parseJsonObject = (value, fallback) => {
     try {
-      const response = await fetch("/api/logs");
-      const data = await response.json();
-      setLogs(data.logs || []);
+      return value ? JSON.parse(value) : fallback;
     } catch {
-      setMessage("로그 목록을 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
+      return fallback;
     }
   };
 
@@ -92,14 +99,72 @@ export default function App() {
       const response = await fetch("/api/me");
       const data = await response.json();
       setMe(data);
+      setProfile(data.profile || null);
     } catch {
       setMe({ authenticated: false });
     }
   };
 
+  const loadUsers = async () => {
+    try {
+      const response = await fetch("/api/users");
+      const data = await response.json();
+      setUsers(data.users || []);
+    } catch {
+      setUsers([]);
+    }
+  };
+
+  const loadFeed = async () => {
+    try {
+      const response = await fetch("/api/feed");
+      const data = await response.json();
+      setFeed(data.logs || []);
+    } catch {
+      setFeed([]);
+    }
+  };
+
+  const loadLogs = async () => {
+    setLoading(true);
+
+    try {
+      let response;
+
+      if (isUserPage) {
+        const slug = userPageMatch[1];
+        response = await fetch(`/api/users/${slug}/logs`);
+      } else {
+        response = await fetch("/api/logs");
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "load failed");
+      }
+
+      setLogs(data.logs || []);
+      setPageProfile(data.profile || null);
+      setIsOwnerPage(!!data.isOwner);
+    } catch {
+      setLogs([]);
+      setMessage("로그 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMe();
-    loadLogs();
+    loadUsers();
+    loadFeed();
+
+    if (isHomePage) {
+      setLogs([]);
+    } else {
+      loadLogs();
+    }
   }, []);
 
   const resetForm = () => {
@@ -113,12 +178,18 @@ export default function App() {
     setShowForm(false);
   };
 
-  const parseJsonObject = (value, fallback) => {
-    try {
-      return value ? JSON.parse(value) : fallback;
-    } catch {
-      return fallback;
+  const openNewForm = () => {
+    if (!me?.authenticated) {
+      window.location.href = "/.auth/login/google";
+      return;
     }
+
+    resetForm();
+    setShowForm(true);
+
+    setTimeout(() => {
+      document.getElementById("log-form")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   const handleChange = (event) => {
@@ -142,14 +213,6 @@ export default function App() {
     if (file) {
       setKeepExistingPhoto(false);
     }
-  };
-
-  const openNewForm = () => {
-    resetForm();
-    setShowForm(true);
-    setTimeout(() => {
-      document.getElementById("log-form")?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
   };
 
   const handleEdit = (log) => {
@@ -182,12 +245,11 @@ export default function App() {
       gasType: log.gasType || "Air",
       residualNitrogen: log.residualNitrogen || "",
       planFollowed: log.planFollowed || "yes",
+      isPublic: log.isPublic ? "true" : "false",
       memo: log.memo || "",
     });
 
-    setEquipmentChecklist(
-      parseJsonObject(log.equipmentChecklist, defaultChecklist(equipmentItems))
-    );
+    setEquipmentChecklist(parseJsonObject(log.equipmentChecklist, defaultChecklist(equipmentItems)));
     setPlanChecklist(parseJsonObject(log.planChecklist, defaultChecklist(planItems)));
     setPhoto(null);
     setPhotoPreview(log.photoUrl || "");
@@ -200,8 +262,23 @@ export default function App() {
     }, 100);
   };
 
+  const refreshCurrentPage = async () => {
+    await loadMe();
+    await loadUsers();
+    await loadFeed();
+
+    if (!isHomePage) {
+      await loadLogs();
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!me?.authenticated) {
+      setMessage("로그인이 필요합니다.");
+      return;
+    }
 
     if (!form.date || !form.location || !form.diveSite) {
       setMessage("날짜, 지역, 다이빙 포인트는 필수입니다.");
@@ -246,9 +323,9 @@ export default function App() {
       }
 
       resetForm();
-      await loadLogs();
+      await refreshCurrentPage();
     } catch {
-      setMessage("저장에 실패했습니다. DB 또는 Blob 설정을 확인해주세요.");
+      setMessage("저장에 실패했습니다. 로그인, DB 또는 Blob 설정을 확인해주세요.");
     } finally {
       setLoading(false);
     }
@@ -269,7 +346,7 @@ export default function App() {
       if (editingLog?.rowKey === log.rowKey) resetForm();
       if (selectedLog?.rowKey === log.rowKey) setSelectedLog(null);
 
-      await loadLogs();
+      await refreshCurrentPage();
     } catch {
       setMessage("삭제에 실패했습니다.");
     } finally {
@@ -284,35 +361,91 @@ export default function App() {
     return `${start - end} bar`;
   };
 
+  const canManage = !isUserPage || isOwnerPage;
+
+  const pageTitle = isUserPage
+    ? `${pageProfile?.displayName || userPageMatch?.[1] || ""} 로그북`
+    : isMePage
+    ? "내 다이빙 로그북"
+    : "공개 다이빙 로그북";
+
+  const listLogs = isHomePage ? feed : logs;
+
   return (
     <main className="page">
       <section className="hero-simple">
         <p className="eyebrow">SCUBA DIVING LOGBOOK</p>
-        <h1>스쿠버다이빙 로그북</h1>
+        <h1>{pageTitle}</h1>
         <p className="hero-description">
           다이빙 기록, 사진, 장비 체크, 잔압, 수면휴식, 계획 준수 여부를 관리합니다.
         </p>
-        <button type="button" className="main-action" onClick={openNewForm}>
-          새 로그 기록 만들기
-        </button>
+
+        <div className="auth-box">
+          {me?.authenticated ? (
+            <>
+              <span>{me.user?.userEmail} 로그인됨</span>
+              <a className="small-button" href="/me">내 로그북</a>
+              {me.myUrl && <a className="small-button" href={me.myUrl}>내 공개 페이지</a>}
+              <a className="small-button" href="/.auth/logout">로그아웃</a>
+            </>
+          ) : (
+            <>
+              <span>비로그인 Viewer 모드입니다.</span>
+              <a className="small-button" href="/.auth/login/google">Google 로그인</a>
+            </>
+          )}
+        </div>
+
+        {canManage && (
+          <button type="button" className="main-action" onClick={openNewForm}>
+            새 로그 기록 만들기
+          </button>
+        )}
       </section>
+
+      {isHomePage && (
+        <section className="panel">
+          <div className="section-title">
+            <p>RECOMMENDED DIVERS</p>
+            <h2>추천 로그북</h2>
+          </div>
+
+          {users.length === 0 ? (
+            <div className="empty-state">공개된 사용자가 없습니다.</div>
+          ) : (
+            <div className="user-grid">
+              {users.map((user) => (
+                <a className="user-card" key={user.slug} href={`/u/${user.slug}`}>
+                  <strong>{user.displayName || user.slug}</strong>
+                  <span>/u/{user.slug}</span>
+                  {user.bio && <small>{user.bio}</small>}
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="panel">
         <div className="section-title row-title">
           <div>
-            <p>LOG HISTORY</p>
-            <h2>등록한 로그 이력</h2>
+            <p>{isHomePage ? "PUBLIC FEED" : "LOG HISTORY"}</p>
+            <h2>{isHomePage ? "최근 공개 다이빙 로그" : "등록한 로그 이력"}</h2>
           </div>
-          <button className="small-button" onClick={loadLogs} disabled={loading}>
+          <button className="small-button" onClick={isHomePage ? loadFeed : loadLogs} disabled={loading}>
             새로고침
           </button>
         </div>
 
-        {logs.length === 0 ? (
-          <div className="empty-state">등록된 로그가 없습니다.</div>
+        {listLogs.length === 0 ? (
+          <div className="empty-state">
+            {isUserPage && !isOwnerPage
+              ? "공개된 로그가 없습니다."
+              : "등록된 로그가 없습니다."}
+          </div>
         ) : (
           <div className="log-list-simple">
-            {logs.map((log) => (
+            {listLogs.map((log) => (
               <article className="log-item" key={log.rowKey}>
                 {log.photoUrl && (
                   <img className="log-photo-large" src={log.photoUrl} alt={log.diveSite} />
@@ -323,23 +456,26 @@ export default function App() {
                   <p>
                     {log.date} · {log.location} · {log.diveNumber || "1"}회차
                   </p>
+                  {isHomePage && log.userSlug && (
+                    <p>
+                      by <a className="inline-link" href={`/u/${log.userSlug}`}>{log.userName || log.userSlug}</a>
+                    </p>
+                  )}
                   <span>
-                    최대수심 {log.maxDepth || "-"}m · 시간 {log.bottomTime || "-"}min ·
-                    수온 {log.waterTemp || "-"}°C
+                    최대수심 {log.maxDepth || "-"}m · 시간 {log.bottomTime || "-"}min · 수온 {log.waterTemp || "-"}°C
                   </span>
+                  <span>{log.isPublic ? "공개 로그" : "비공개 로그"}</span>
                   {log.memo && <small>{log.memo}</small>}
                 </div>
 
                 <div className="log-actions">
-                  <button className="detail-button" onClick={() => setSelectedLog(log)}>
-                    상세보기
-                  </button>
-                  <button className="edit-button" onClick={() => handleEdit(log)}>
-                    수정
-                  </button>
-                  <button className="delete-button" onClick={() => handleDelete(log)}>
-                    삭제
-                  </button>
+                  <button className="detail-button" onClick={() => setSelectedLog(log)}>상세보기</button>
+                  {canManage && (
+                    <>
+                      <button className="edit-button" onClick={() => handleEdit(log)}>수정</button>
+                      <button className="delete-button" onClick={() => handleDelete(log)}>삭제</button>
+                    </>
+                  )}
                 </div>
               </article>
             ))}
@@ -354,9 +490,7 @@ export default function App() {
               <p>DETAIL</p>
               <h2>{selectedLog.diveSite}</h2>
             </div>
-            <button className="small-button" onClick={() => setSelectedLog(null)}>
-              닫기
-            </button>
+            <button className="small-button" onClick={() => setSelectedLog(null)}>닫기</button>
           </div>
 
           {selectedLog.photoUrl && (
@@ -364,6 +498,8 @@ export default function App() {
           )}
 
           <div className="detail-grid">
+            <Info label="공개 여부" value={selectedLog.isPublic ? "공개" : "비공개"} />
+            <Info label="작성자" value={selectedLog.userName || selectedLog.userEmail} />
             <Info label="날짜" value={selectedLog.date} />
             <Info label="지역" value={selectedLog.location} />
             <Info label="회차" value={`${selectedLog.diveNumber || "1"}회차`} />
@@ -418,12 +554,25 @@ export default function App() {
               <p>{editingLog ? "EDIT LOG" : "NEW LOG"}</p>
               <h2>{editingLog ? "다이빙 로그 수정" : "다이빙 로그 등록"}</h2>
             </div>
-            <button type="button" className="small-button" onClick={resetForm}>
-              닫기
-            </button>
+            <button type="button" className="small-button" onClick={resetForm}>닫기</button>
           </div>
 
           <form className="log-form" onSubmit={handleSubmit}>
+            <h3 className="form-subtitle">공개 설정</h3>
+            <label className="check-item">
+              <input
+                type="checkbox"
+                checked={form.isPublic === "true"}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isPublic: e.target.checked ? "true" : "false",
+                  }))
+                }
+              />
+              공개 로그로 공유
+            </label>
+
             <h3 className="form-subtitle">기본 정보</h3>
             <div className="form-grid">
               <Field label="날짜 *" type="date" name="date" value={form.date} onChange={handleChange} />
@@ -469,10 +618,16 @@ export default function App() {
 
             <h3 className="form-subtitle">다이빙 계획 체크</h3>
             <div className="form-grid">
-              <SelectField label="전체 계획 준수 여부" name="planFollowed" value={form.planFollowed} onChange={handleChange} options={[
-                ["yes", "준수"],
-                ["no", "미준수/확인 필요"],
-              ]} />
+              <SelectField
+                label="전체 계획 준수 여부"
+                name="planFollowed"
+                value={form.planFollowed}
+                onChange={handleChange}
+                options={[
+                  ["yes", "준수"],
+                  ["no", "미준수/확인 필요"],
+                ]}
+              />
             </div>
             <CheckboxGrid items={planItems} values={planChecklist} onChange={(key) => handleChecklistChange("plan", key)} />
 
@@ -501,6 +656,8 @@ export default function App() {
           {message && <p className="message">{message}</p>}
         </section>
       )}
+
+      {message && !showForm && <p className="message">{message}</p>}
     </main>
   );
 }
@@ -522,11 +679,7 @@ function SelectField({ label, name, value, onChange, options }) {
         {options.map((option) => {
           const val = Array.isArray(option) ? option[0] : option;
           const text = Array.isArray(option) ? option[1] : option;
-          return (
-            <option key={val} value={val}>
-              {text}
-            </option>
-          );
+          return <option key={val} value={val}>{text}</option>;
         })}
       </select>
     </label>
