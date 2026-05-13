@@ -56,10 +56,13 @@ function getUser(req) {
       claims.find((c) => c.typ === "name") ||
       claims.find((c) => c.typ?.endsWith("/name"));
 
+    const userEmail = emailClaim?.val || principal.userDetails || "";
+    const userId = principal.userId || userEmail;
+
     return {
-      userId: principal.userId || principal.userDetails || "",
-      userEmail: emailClaim?.val || principal.userDetails || "",
-      userName: nameClaim?.val || principal.userDetails || "",
+      userId,
+      userEmail,
+      userName: nameClaim?.val || userEmail,
       identityProvider: principal.identityProvider || "",
     };
   } catch {
