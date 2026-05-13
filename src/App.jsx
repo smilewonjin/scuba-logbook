@@ -1,405 +1,196 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  Camera,
-  Clock3,
-  Gauge,
-  MapPin,
-  Plus,
-  Search,
-  Thermometer,
-  Waves,
-} from "lucide-react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
 import "./index.css";
 
-const initialTrips = [
-  {
-    id: 1,
-    title: "Cebu Blue Trip",
-    country: "Philippines",
-    region: "Moalboal / Mactan",
-    period: "2026.05.01 - 2026.05.05",
-    dives: 8,
-    maxDepth: 31,
-    cover:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1400&auto=format&fit=crop",
-    tags: ["Fun Dive", "Turtle", "Coral Reef"],
-  },
-  {
-    id: 2,
-    title: "Jeju Weekend Dive",
-    country: "Korea",
-    region: "Seogwipo",
-    period: "2026.06.12 - 2026.06.14",
-    dives: 4,
-    maxDepth: 18,
-    cover:
-      "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=1400&auto=format&fit=crop",
-    tags: ["Training", "Boat", "Photo"],
-  },
-  {
-    id: 3,
-    title: "Okinawa Reef Diary",
-    country: "Japan",
-    region: "Blue Cave",
-    period: "2026.09.02 - 2026.09.07",
-    dives: 10,
-    maxDepth: 27,
-    cover:
-      "https://images.unsplash.com/photo-1682687220063-4742bd7fd538?q=80&w=1400&auto=format&fit=crop",
-    tags: ["Nitrox", "Reef", "Blue Cave"],
-  },
-];
-
-const sampleDives = [
-  {
-    id: "sample-1",
-    site: "Moalboal Sardine Run",
-    date: "2026-05-01",
-    depth: "28m",
-    time: "47min",
-    temp: "27°C",
-    type: "Fun Dive",
-    memo: "정어리 떼와 거북이를 본 다이빙",
-  },
-  {
-    id: "sample-2",
-    site: "Pescador Island",
-    date: "2026-05-02",
-    depth: "31m",
-    time: "50min",
-    temp: "26°C",
-    type: "Drift",
-    memo: "조류가 약간 있었지만 시야가 좋았음",
-  },
-  {
-    id: "sample-3",
-    site: "Seogwipo Boat Point",
-    date: "2026-06-13",
-    depth: "18m",
-    time: "42min",
-    temp: "21°C",
-    type: "Training",
-    memo: "중성부력 연습과 사진 촬영",
-  },
-];
-
-const STORAGE_KEY = "scuba-logbook-dives";
+const emptyForm = {
+  date: "",
+  location: "",
+  diveSite: "",
+  maxDepth: "",
+  bottomTime: "",
+  waterTemp: "",
+  visibility: "",
+  buddy: "",
+  memo: "",
+};
 
 export default function App() {
-  const [query, setQuery] = useState("");
-  const [logs, setLogs] = useState(() => {
-    const savedLogs = localStorage.getItem(STORAGE_KEY);
-    return savedLogs ? JSON.parse(savedLogs) : sampleDives;
-  });
-  const [form, setForm] = useState({
-    site: "",
-    date: "",
-    depth: "",
-    time: "",
-    temp: "",
-    type: "Fun Dive",
-    memo: "",
-  });
+  const [logs, setLogs] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const loadLogs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/logs");
+      const data = await response.json();
+      setLogs(data.logs || []);
+    } catch (error) {
+      setMessage("로그 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-  }, [logs]);
-
-  const trips = useMemo(() => {
-    const keyword = query.toLowerCase();
-    return initialTrips.filter((trip) =>
-      `${trip.title} ${trip.country} ${trip.region} ${trip.tags.join(" ")}`
-        .toLowerCase()
-        .includes(keyword)
-    );
-  }, [query]);
-
-  const totalDives = logs.length;
-  const maxDepth = logs.reduce((max, log) => {
-    const depthNumber = Number(String(log.depth).replace("m", ""));
-    return Number.isFinite(depthNumber) ? Math.max(max, depthNumber) : max;
-  }, 0);
+    loadLogs();
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.site.trim()) {
-      alert("Dive Site를 입력해주세요.");
+    if (!form.date || !form.location || !form.diveSite) {
+      setMessage("날짜, 지역, 다이빙 포인트는 필수입니다.");
       return;
     }
 
-    const newLog = {
-      id: crypto.randomUUID(),
-      site: form.site,
-      date: form.date || new Date().toISOString().slice(0, 10),
-      depth: form.depth ? `${form.depth}m` : "-",
-      time: form.time ? `${form.time}min` : "-",
-      temp: form.temp ? `${form.temp}°C` : "-",
-      type: form.type,
-      memo: form.memo || "메모 없음",
-    };
+    setLoading(true);
+    setMessage("");
 
-    setLogs((prev) => [newLog, ...prev]);
-    setForm({
-      site: "",
-      date: "",
-      depth: "",
-      time: "",
-      temp: "",
-      type: "Fun Dive",
-      memo: "",
-    });
+    try {
+      const response = await fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        throw new Error("save failed");
+      }
+
+      setForm(emptyForm);
+      setMessage("다이빙 로그가 저장되었습니다.");
+      await loadLogs();
+    } catch (error) {
+      setMessage("저장에 실패했습니다. DB 연결 설정을 확인해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    setLogs((prev) => prev.filter((log) => log.id !== id));
-  };
+  const handleDelete = async (log) => {
+    if (!confirm("이 로그를 삭제할까요?")) return;
 
-  const handleResetSample = () => {
-    setLogs(sampleDives);
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/logs/${log.rowKey}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("delete failed");
+      }
+
+      await loadLogs();
+    } catch (error) {
+      setMessage("삭제에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="app-shell">
-      <header className="hero-section">
-        <nav className="navbar">
-          <div className="brand">
-            <div className="brand-icon">
-              <Waves size={24} />
-            </div>
-            <div>
-              <strong>Dive Diary</strong>
-              <span>Scuba Logbook</span>
-            </div>
-          </div>
-
-          <div className="nav-links">
-            <a href="#trips">Trips</a>
-            <a href="#logs">Logs</a>
-            <a href="#new-log">New Log</a>
-          </div>
-
-          <a className="nav-button" href="#new-log">
-            <Plus size={17} /> 기록하기
-          </a>
-        </nav>
-
-        <div className="hero-content">
-          <motion.div
-            className="hero-text"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="eyebrow">🌊 나만의 스쿠버다이빙 감성 로그북</span>
-            <h1>바닷속 기억을 여행처럼 기록하세요.</h1>
-            <p>
-              다이빙 여행, 포인트, 최대수심, 수온, 버디, 사진 메모를 한 곳에 모아
-              관리하는 개인 로그북 웹앱입니다.
-            </p>
-            <div className="hero-actions">
-              <a href="#new-log" className="primary-button">
-                첫 로그 기록하기
-              </a>
-              <a href="#trips" className="secondary-button">
-                샘플 여행 보기
-              </a>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="hero-card"
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1400&auto=format&fit=crop"
-              alt="scuba diving"
-            />
-            <div className="hero-card-overlay">
-              <span>Featured Trip</span>
-              <h2>Cebu Blue Trip</h2>
-              <div className="chips">
-                <b>8 dives</b>
-                <b>Max 31m</b>
-                <b>27°C</b>
-                <b>Turtle</b>
-              </div>
-            </div>
-          </motion.div>
+    <main className="page">
+      <section className="hero-simple">
+        <div>
+          <p className="eyebrow">SCUBA DIVING LOGBOOK</p>
+          <h1>스쿠버다이빙 로그북</h1>
+          <p className="hero-description">
+            다이빙 날짜, 지역, 포인트, 수심, 수온, 버디와 메모를 등록하고 이력을 확인합니다.
+          </p>
         </div>
-      </header>
+        <a href="#new-log" className="main-action">새 로그 기록 만들기</a>
+      </section>
 
-      <main className="main-content">
-        <section className="stats-grid">
-          <StatCard icon={<Waves />} label="Total Dives" value={totalDives} />
-          <StatCard icon={<Gauge />} label="Max Depth" value={`${maxDepth}m`} />
-          <StatCard icon={<Camera />} label="Photos" value="0" />
-          <StatCard icon={<MapPin />} label="Countries" value="3" />
-        </section>
+      <section id="new-log" className="panel">
+        <div className="section-title">
+          <p>NEW LOG</p>
+          <h2>다이빙 로그 등록</h2>
+        </div>
 
-        <section id="trips" className="section-block">
-          <div className="section-heading">
-            <div>
-              <span>Trip Collection</span>
-              <h2>다이빙 여행</h2>
-            </div>
-            <div className="search-box">
-              <Search size={18} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="여행, 국가, 태그 검색"
-              />
-            </div>
+        <form className="log-form" onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <label>
+              날짜 *
+              <input type="date" name="date" value={form.date} onChange={handleChange} />
+            </label>
+            <label>
+              지역 *
+              <input name="location" value={form.location} onChange={handleChange} placeholder="예: 세부, 제주, 오키나와" />
+            </label>
+            <label>
+              다이빙 포인트 *
+              <input name="diveSite" value={form.diveSite} onChange={handleChange} placeholder="예: Moalboal Sardine Run" />
+            </label>
+            <label>
+              최대 수심(m)
+              <input name="maxDepth" value={form.maxDepth} onChange={handleChange} placeholder="예: 28" />
+            </label>
+            <label>
+              다이빙 시간(min)
+              <input name="bottomTime" value={form.bottomTime} onChange={handleChange} placeholder="예: 47" />
+            </label>
+            <label>
+              수온(°C)
+              <input name="waterTemp" value={form.waterTemp} onChange={handleChange} placeholder="예: 27" />
+            </label>
+            <label>
+              시야
+              <input name="visibility" value={form.visibility} onChange={handleChange} placeholder="예: 좋음, 15m" />
+            </label>
+            <label>
+              버디
+              <input name="buddy" value={form.buddy} onChange={handleChange} placeholder="예: 홍길동" />
+            </label>
           </div>
 
-          <div className="trip-grid">
-            {trips.map((trip) => (
-              <article className="trip-card" key={trip.id}>
-                <img src={trip.cover} alt={trip.title} />
-                <div className="trip-body">
-                  <div className="trip-title-row">
-                    <div>
-                      <h3>{trip.title}</h3>
-                      <p>
-                        <MapPin size={15} /> {trip.country} · {trip.region}
-                      </p>
-                      <p>
-                        <CalendarDays size={15} /> {trip.period}
-                      </p>
-                    </div>
-                    <strong>{trip.dives} dives</strong>
-                  </div>
-                  <div className="tag-row">
-                    {trip.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
+          <label>
+            메모
+            <textarea name="memo" value={form.memo} onChange={handleChange} placeholder="본 생물, 컨디션, 장비 이슈, 느낌 등을 기록하세요." />
+          </label>
+
+          <button type="submit" disabled={loading}>
+            {loading ? "처리 중..." : "DB에 저장"}
+          </button>
+        </form>
+
+        {message && <p className="message">{message}</p>}
+      </section>
+
+      <section className="panel">
+        <div className="section-title row-title">
+          <div>
+            <p>LOG HISTORY</p>
+            <h2>등록한 로그 이력</h2>
+          </div>
+          <button className="small-button" onClick={loadLogs} disabled={loading}>새로고침</button>
+        </div>
+
+        {logs.length === 0 ? (
+          <div className="empty-state">등록된 로그가 없습니다. 첫 로그를 등록해보세요.</div>
+        ) : (
+          <div className="log-list-simple">
+            {logs.map((log) => (
+              <article className="log-item" key={log.rowKey}>
+                <div>
+                  <strong>{log.diveSite}</strong>
+                  <p>{log.date} · {log.location}</p>
+                  <span>
+                    최대수심 {log.maxDepth || "-"}m · 시간 {log.bottomTime || "-"}min · 수온 {log.waterTemp || "-"}°C
+                  </span>
+                  {log.memo && <small>{log.memo}</small>}
                 </div>
+                <button className="delete-button" onClick={() => handleDelete(log)}>삭제</button>
               </article>
             ))}
           </div>
-        </section>
-
-        <section className="two-column">
-          <section id="new-log" className="form-panel">
-            <span>New Dive Log</span>
-            <h2>오늘의 다이빙 기록</h2>
-            <form onSubmit={handleSubmit}>
-              <input
-                name="site"
-                value={form.site}
-                onChange={handleChange}
-                placeholder="Dive Site 예: Moalboal"
-              />
-              <input name="date" value={form.date} onChange={handleChange} type="date" />
-
-              <div className="form-grid">
-                <input
-                  name="depth"
-                  value={form.depth}
-                  onChange={handleChange}
-                  placeholder="최대수심 m"
-                />
-                <input
-                  name="time"
-                  value={form.time}
-                  onChange={handleChange}
-                  placeholder="시간 min"
-                />
-                <input
-                  name="temp"
-                  value={form.temp}
-                  onChange={handleChange}
-                  placeholder="수온 °C"
-                />
-                <select name="type" value={form.type} onChange={handleChange}>
-                  <option>Fun Dive</option>
-                  <option>Deep</option>
-                  <option>Night</option>
-                  <option>Drift</option>
-                  <option>Training</option>
-                  <option>Photo</option>
-                </select>
-              </div>
-
-              <textarea
-                name="memo"
-                value={form.memo}
-                onChange={handleChange}
-                placeholder="본 생물, 컨디션, 장비 이슈, 느낌 등을 기록하세요."
-              />
-              <button type="submit">로그 추가하기</button>
-            </form>
-            <p className="notice">
-              현재 입력 데이터는 이 브라우저의 localStorage에 저장됩니다. PC/브라우저를
-              바꾸면 보이지 않으며, 다음 단계에서 DB 저장으로 변경할 수 있습니다.
-            </p>
-          </section>
-
-          <section id="logs" className="log-panel">
-            <span>Recent Dive Logs</span>
-            <h2>최근 로그</h2>
-            <div className="log-actions">
-              <button type="button" onClick={handleResetSample}>
-                샘플 로그로 초기화
-              </button>
-            </div>
-            <div className="log-list">
-              {logs.map((log) => (
-                <article className="log-card" key={log.id}>
-                  <div>
-                    <h3>{log.site}</h3>
-                    <p>
-                      {log.date} · {log.type}
-                    </p>
-                    <small>{log.memo}</small>
-                  </div>
-                  <div className="log-metrics">
-                    <span>
-                      <Gauge size={15} /> {log.depth}
-                    </span>
-                    <span>
-                      <Clock3 size={15} /> {log.time}
-                    </span>
-                    <span>
-                      <Thermometer size={15} /> {log.temp}
-                    </span>
-                    <button
-                      type="button"
-                      className="delete-log"
-                      onClick={() => handleDelete(log.id)}
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        </section>
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value }) {
-  return (
-    <article className="stat-card">
-      <div className="stat-icon">{icon}</div>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
-    </article>
+        )}
+      </section>
+    </main>
   );
 }
