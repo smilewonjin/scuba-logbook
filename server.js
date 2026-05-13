@@ -40,6 +40,27 @@ function createBlobContainerClient() {
   return blobServiceClient.getContainerClient(BLOB_CONTAINER_NAME);
 }
 
+async function uploadPhotoIfExists(file) {
+  if (!file) {
+    return "";
+  }
+
+  const containerClient = createBlobContainerClient();
+  await containerClient.createIfNotExists();
+
+  const extension = path.extname(file.originalname) || ".jpg";
+  const blobName = `${crypto.randomUUID()}${extension}`;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  await blockBlobClient.uploadData(file.buffer, {
+    blobHTTPHeaders: {
+      blobContentType: file.mimetype,
+    },
+  });
+
+  return blockBlobClient.url;
+}
+
 app.get("/api/logs", async (req, res) => {
   try {
     const client = createTableClient();
@@ -65,6 +86,7 @@ app.get("/api/logs", async (req, res) => {
         memo: entity.memo,
         photoUrl: entity.photoUrl,
         createdAt: entity.createdAt,
+        updatedAt: entity.updatedAt,
       });
     }
 
@@ -85,25 +107,7 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
     const tableClient = createTableClient();
     await tableClient.createTable();
 
-    let photoUrl = "";
-
-    if (req.file) {
-      const containerClient = createBlobContainerClient();
-      await containerClient.createIfNotExists();
-
-      const extension = path.extname(req.file.originalname) || ".jpg";
-      const blobName = `${crypto.randomUUID()}${extension}`;
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
-      await blockBlobClient.uploadData(req.file.buffer, {
-        blobHTTPHeaders: {
-          blobContentType: req.file.mimetype,
-        },
-      });
-
-      photoUrl = blockBlobClient.url;
-    }
-
+    const photoUrl = await uploadPhotoIfExists(req.file);
     const now = new Date().toISOString();
 
     const entity = {
@@ -120,6 +124,7 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
       memo: req.body.memo || "",
       photoUrl,
       createdAt: now,
+      updatedAt: now,
     };
 
     await tableClient.createEntity(entity);
@@ -132,6 +137,53 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
     console.error("POST /api/logs failed:", error);
     res.status(500).json({
       message: "Failed to save log",
+      error: error.message,
+    });
+  }
+});
+
+app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
+  try {
+    const tableClient = createTableClient();
+    await tableClient.createTable();
+
+    const oldEntity = await tableClient.getEntity("DiveLog", req.params.rowKey);
+
+    let photoUrl = oldEntity.photoUrl || "";
+
+    if (req.file) {
+      photoUrl = await uploadPhotoIfExists(req.file);
+    } else if (req.body.keepExistingPhoto !== "true") {
+      photoUrl = "";
+    }
+
+    const entity = {
+      partitionKey: "DiveLog",
+      rowKey: req.params.rowKey,
+      date: req.body.date || "",
+      location: req.body.location || "",
+      diveSite: req.body.diveSite || "",
+      maxDepth: req.body.maxDepth || "",
+      bottomTime: req.body.bottomTime || "",
+      waterTemp: req.body.waterTemp || "",
+      visibility: req.body.visibility || "",
+      buddy: req.body.buddy || "",
+      memo: req.body.memo || "",
+      photoUrl,
+      createdAt: oldEntity.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await tableClient.updateEntity(entity, "Replace");
+
+    res.json({
+      message: "Dive log updated",
+      rowKey: entity.rowKey,
+    });
+  } catch (error) {
+    console.error("PUT /api/logs failed:", error);
+    res.status(500).json({
+      message: "Failed to update log",
       error: error.message,
     });
   }

@@ -18,6 +18,8 @@ export default function App() {
   const [form, setForm] = useState(emptyForm);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [editingLog, setEditingLog] = useState(null);
+  const [keepExistingPhoto, setKeepExistingPhoto] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -38,6 +40,14 @@ export default function App() {
     loadLogs();
   }, []);
 
+  const resetForm = () => {
+    setForm(emptyForm);
+    setPhoto(null);
+    setPhotoPreview("");
+    setEditingLog(null);
+    setKeepExistingPhoto(true);
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -47,6 +57,31 @@ export default function App() {
     const file = event.target.files?.[0];
     setPhoto(file || null);
     setPhotoPreview(file ? URL.createObjectURL(file) : "");
+
+    if (file) {
+      setKeepExistingPhoto(false);
+    }
+  };
+
+  const handleEdit = (log) => {
+    setEditingLog(log);
+    setForm({
+      date: log.date || "",
+      location: log.location || "",
+      diveSite: log.diveSite || "",
+      maxDepth: log.maxDepth || "",
+      bottomTime: log.bottomTime || "",
+      waterTemp: log.waterTemp || "",
+      visibility: log.visibility || "",
+      buddy: log.buddy || "",
+      memo: log.memo || "",
+    });
+    setPhoto(null);
+    setPhotoPreview(log.photoUrl || "");
+    setKeepExistingPhoto(true);
+    setMessage("수정 모드입니다. 내용을 변경한 뒤 수정 저장을 누르세요.");
+
+    document.getElementById("new-log")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSubmit = async (event) => {
@@ -71,19 +106,33 @@ export default function App() {
         formData.append("photo", photo);
       }
 
-      const response = await fetch("/api/logs", {
-        method: "POST",
-        body: formData,
-      });
+      if (editingLog) {
+        formData.append("keepExistingPhoto", keepExistingPhoto ? "true" : "false");
 
-      if (!response.ok) {
-        throw new Error("save failed");
+        const response = await fetch(`/api/logs/${editingLog.rowKey}`, {
+          method: "PUT",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("update failed");
+        }
+
+        setMessage("다이빙 로그가 수정되었습니다.");
+      } else {
+        const response = await fetch("/api/logs", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("save failed");
+        }
+
+        setMessage("다이빙 로그가 저장되었습니다.");
       }
 
-      setForm(emptyForm);
-      setPhoto(null);
-      setPhotoPreview("");
-      setMessage("다이빙 로그가 저장되었습니다.");
+      resetForm();
       await loadLogs();
     } catch {
       setMessage("저장에 실패했습니다. DB 또는 Blob 설정을 확인해주세요.");
@@ -104,6 +153,10 @@ export default function App() {
 
       if (!response.ok) {
         throw new Error("delete failed");
+      }
+
+      if (editingLog?.rowKey === log.rowKey) {
+        resetForm();
       }
 
       await loadLogs();
@@ -131,9 +184,17 @@ export default function App() {
       </section>
 
       <section id="new-log" className="panel">
-        <div className="section-title">
-          <p>NEW LOG</p>
-          <h2>다이빙 로그 등록</h2>
+        <div className="section-title row-title">
+          <div>
+            <p>{editingLog ? "EDIT LOG" : "NEW LOG"}</p>
+            <h2>{editingLog ? "다이빙 로그 수정" : "다이빙 로그 등록"}</h2>
+          </div>
+
+          {editingLog && (
+            <button type="button" className="small-button" onClick={resetForm}>
+              수정 취소
+            </button>
+          )}
         </div>
 
         <form className="log-form" onSubmit={handleSubmit}>
@@ -220,13 +281,19 @@ export default function App() {
           </div>
 
           <label>
-            사진
+            사진 {editingLog ? "(새 사진을 선택하면 교체됩니다)" : ""}
             <input type="file" accept="image/*" onChange={handlePhotoChange} />
           </label>
 
           {photoPreview && (
             <div className="photo-preview">
-              <img src={photoPreview} alt="선택한 다이빙 사진 미리보기" />
+              <img src={photoPreview} alt="다이빙 사진 미리보기" />
+
+              {editingLog && !photo && (
+                <p className="photo-help">기존 사진을 유지합니다.</p>
+              )}
+
+              {photo && <p className="photo-help">새 사진으로 교체됩니다.</p>}
             </div>
           )}
 
@@ -241,7 +308,11 @@ export default function App() {
           </label>
 
           <button type="submit" disabled={loading}>
-            {loading ? "처리 중..." : "DB에 저장"}
+            {loading
+              ? "처리 중..."
+              : editingLog
+              ? "수정 저장"
+              : "DB에 저장"}
           </button>
         </form>
 
@@ -291,9 +362,14 @@ export default function App() {
                   {log.memo && <small>{log.memo}</small>}
                 </div>
 
-                <button className="delete-button" onClick={() => handleDelete(log)}>
-                  삭제
-                </button>
+                <div className="log-actions">
+                  <button className="edit-button" onClick={() => handleEdit(log)}>
+                    수정
+                  </button>
+                  <button className="delete-button" onClick={() => handleDelete(log)}>
+                    삭제
+                  </button>
+                </div>
               </article>
             ))}
           </div>
