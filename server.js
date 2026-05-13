@@ -34,16 +34,12 @@ function createBlobContainerClient() {
     throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured.");
   }
 
-  const blobServiceClient =
-    BlobServiceClient.fromConnectionString(connectionString);
-
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
   return blobServiceClient.getContainerClient(BLOB_CONTAINER_NAME);
 }
 
 async function uploadPhotoIfExists(file) {
-  if (!file) {
-    return "";
-  }
+  if (!file) return "";
 
   const containerClient = createBlobContainerClient();
   await containerClient.createIfNotExists();
@@ -61,6 +57,99 @@ async function uploadPhotoIfExists(file) {
   return blockBlobClient.url;
 }
 
+function buildEntity(body, rowKey, photoUrl, createdAt) {
+  return {
+    partitionKey: "DiveLog",
+    rowKey,
+
+    date: body.date || "",
+    location: body.location || "",
+    diveSite: body.diveSite || "",
+    diveNumber: body.diveNumber || "1",
+
+    buddy: body.buddy || "",
+    shop: body.shop || "",
+
+    startTime: body.startTime || "",
+    endTime: body.endTime || "",
+    surfaceInterval: body.surfaceInterval || "",
+
+    maxDepth: body.maxDepth || "",
+    avgDepth: body.avgDepth || "",
+    bottomTime: body.bottomTime || "",
+    waterTemp: body.waterTemp || "",
+    visibility: body.visibility || "",
+    current: body.current || "",
+    wave: body.wave || "",
+    weather: body.weather || "",
+    entryType: body.entryType || "",
+
+    startPressure: body.startPressure || "",
+    endPressure: body.endPressure || "",
+    tankType: body.tankType || "",
+    tankSize: body.tankSize || "",
+    gasType: body.gasType || "",
+
+    residualNitrogen: body.residualNitrogen || "",
+    planFollowed: body.planFollowed || "",
+
+    equipmentChecklist: body.equipmentChecklist || "{}",
+    planChecklist: body.planChecklist || "{}",
+
+    memo: body.memo || "",
+    photoUrl: photoUrl || "",
+
+    createdAt: createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function mapEntity(entity) {
+  return {
+    rowKey: entity.rowKey,
+
+    date: entity.date,
+    location: entity.location,
+    diveSite: entity.diveSite,
+    diveNumber: entity.diveNumber,
+
+    buddy: entity.buddy,
+    shop: entity.shop,
+
+    startTime: entity.startTime,
+    endTime: entity.endTime,
+    surfaceInterval: entity.surfaceInterval,
+
+    maxDepth: entity.maxDepth,
+    avgDepth: entity.avgDepth,
+    bottomTime: entity.bottomTime,
+    waterTemp: entity.waterTemp,
+    visibility: entity.visibility,
+    current: entity.current,
+    wave: entity.wave,
+    weather: entity.weather,
+    entryType: entity.entryType,
+
+    startPressure: entity.startPressure,
+    endPressure: entity.endPressure,
+    tankType: entity.tankType,
+    tankSize: entity.tankSize,
+    gasType: entity.gasType,
+
+    residualNitrogen: entity.residualNitrogen,
+    planFollowed: entity.planFollowed,
+
+    equipmentChecklist: entity.equipmentChecklist,
+    planChecklist: entity.planChecklist,
+
+    memo: entity.memo,
+    photoUrl: entity.photoUrl,
+
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+  };
+}
+
 app.get("/api/logs", async (req, res) => {
   try {
     const client = createTableClient();
@@ -73,43 +162,10 @@ app.get("/api/logs", async (req, res) => {
         filter: `PartitionKey eq 'DiveLog'`,
       },
     })) {
-      logs.push({
-        rowKey: entity.rowKey,
-        date: entity.date,
-        location: entity.location,
-        diveSite: entity.diveSite,
-        diveNumber: entity.diveNumber,
-        buddy: entity.buddy,
-        shop: entity.shop,
-        startTime: entity.startTime,
-        endTime: entity.endTime,
-        surfaceInterval: entity.surfaceInterval,
-        maxDepth: entity.maxDepth,
-        avgDepth: entity.avgDepth,
-        bottomTime: entity.bottomTime,
-        waterTemp: entity.waterTemp,
-        visibility: entity.visibility,
-        current: entity.current,
-        wave: entity.wave,
-        weather: entity.weather,
-        entryType: entity.entryType,
-        startPressure: entity.startPressure,
-        endPressure: entity.endPressure,
-        tankType: entity.tankType,
-        tankSize: entity.tankSize,
-        gasType: entity.gasType,
-        residualNitrogen: entity.residualNitrogen,
-        planFollowed: entity.planFollowed,
-        equipmentChecklist: entity.equipmentChecklist,
-        planChecklist: entity.planChecklist,
-        memo: entity.memo,
-        photoUrl: entity.photoUrl,
-        createdAt: entity.createdAt,
-        updatedAt: entity.updatedAt,
-      });
+      logs.push(mapEntity(entity));
     }
 
-    logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
     res.json({ logs });
   } catch (error) {
@@ -127,30 +183,16 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
     await tableClient.createTable();
 
     const photoUrl = await uploadPhotoIfExists(req.file);
-    const now = new Date().toISOString();
+    const rowKey = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
 
-    const entity = {
-      partitionKey: "DiveLog",
-      rowKey: crypto.randomUUID(),
-      date: req.body.date || "",
-      location: req.body.location || "",
-      diveSite: req.body.diveSite || "",
-      maxDepth: req.body.maxDepth || "",
-      bottomTime: req.body.bottomTime || "",
-      waterTemp: req.body.waterTemp || "",
-      visibility: req.body.visibility || "",
-      buddy: req.body.buddy || "",
-      memo: req.body.memo || "",
-      photoUrl,
-      createdAt: now,
-      updatedAt: now,
-    };
+    const entity = buildEntity(req.body, rowKey, photoUrl, createdAt);
 
     await tableClient.createEntity(entity);
 
     res.status(201).json({
       message: "Dive log saved",
-      rowKey: entity.rowKey,
+      rowKey,
     });
   } catch (error) {
     console.error("POST /api/logs failed:", error);
@@ -176,47 +218,18 @@ app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
       photoUrl = "";
     }
 
-    const buildEntity = (body, rowKey, photoUrl, createdAt) => ({
-      partitionKey: "DiveLog",
-      rowKey,
-      date: body.date || "",
-      location: body.location || "",
-      diveSite: body.diveSite || "",
-      diveNumber: body.diveNumber || "1",
-      buddy: body.buddy || "",
-      shop: body.shop || "",
-      startTime: body.startTime || "",
-      endTime: body.endTime || "",
-      surfaceInterval: body.surfaceInterval || "",
-      maxDepth: body.maxDepth || "",
-      avgDepth: body.avgDepth || "",
-      bottomTime: body.bottomTime || "",
-      waterTemp: body.waterTemp || "",
-      visibility: body.visibility || "",
-      current: body.current || "",
-      wave: body.wave || "",
-      weather: body.weather || "",
-      entryType: body.entryType || "",
-      startPressure: body.startPressure || "",
-      endPressure: body.endPressure || "",
-      tankType: body.tankType || "",
-      tankSize: body.tankSize || "",
-      gasType: body.gasType || "",
-      residualNitrogen: body.residualNitrogen || "",
-      planFollowed: body.planFollowed || "",
-      equipmentChecklist: body.equipmentChecklist || "{}",
-      planChecklist: body.planChecklist || "{}",
-      memo: body.memo || "",
+    const entity = buildEntity(
+      req.body,
+      req.params.rowKey,
       photoUrl,
-      createdAt,
-      updatedAt: new Date().toISOString(),
-    });
+      oldEntity.createdAt || new Date().toISOString()
+    );
 
     await tableClient.updateEntity(entity, "Replace");
 
     res.json({
       message: "Dive log updated",
-      rowKey: entity.rowKey,
+      rowKey: req.params.rowKey,
     });
   } catch (error) {
     console.error("PUT /api/logs failed:", error);
