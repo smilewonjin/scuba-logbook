@@ -9,7 +9,8 @@ import { BlobServiceClient } from "@azure/storage-blob";
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-const TABLE_NAME = "divelogs";
+const LOG_TABLE = "divelogs";
+const USER_TABLE = "users";
 const BLOB_CONTAINER_NAME = process.env.AZURE_BLOB_CONTAINER_NAME || "divephotos";
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
@@ -21,44 +22,39 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "dist")));
 
-function createTableClient() {
+function tableClient(tableName) {
   if (!connectionString) {
     throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured.");
   }
-
-  return TableClient.fromConnectionString(connectionString, TABLE_NAME);
+  return TableClient.fromConnectionString(connectionString, tableName);
 }
 
-function createBlobContainerClient() {
+function blobContainerClient() {
   if (!connectionString) {
     throw new Error("AZURE_STORAGE_CONNECTION_STRING is not configured.");
   }
-
-  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-  return blobServiceClient.getContainerClient(BLOB_CONTAINER_NAME);
+  return BlobServiceClient.fromConnectionString(connectionString).getContainerClient(
+    BLOB_CONTAINER_NAME
+  );
 }
 
 function getUser(req) {
   const header = req.headers["x-ms-client-principal"];
-
-  if (!header) {
-    return null;
-  }
+  if (!header) return null;
 
   try {
     const decoded = Buffer.from(header, "base64").toString("utf8");
     const principal = JSON.parse(decoded);
-
     const claims = principal.claims || [];
 
     const emailClaim =
-      claims.find((claim) => claim.typ === "emails") ||
-      claims.find((claim) => claim.typ === "email") ||
-      claims.find((claim) => claim.typ?.endsWith("/emailaddress"));
+      claims.find((c) => c.typ === "emails") ||
+      claims.find((c) => c.typ === "email") ||
+      claims.find((c) => c.typ?.endsWith("/emailaddress"));
 
     const nameClaim =
-      claims.find((claim) => claim.typ === "name") ||
-      claims.find((claim) => claim.typ?.endsWith("/name"));
+      claims.find((c) => c.typ === "name") ||
+      claims.find((c) => c.typ?.endsWith("/name"));
 
     return {
       userId: principal.userId || principal.userDetails || "",
@@ -66,62 +62,115 @@ function getUser(req) {
       userName: nameClaim?.val || principal.userDetails || "",
       identityProvider: principal.identityProvider || "",
     };
-  } catch (error) {
-    console.error("Failed to parse x-ms-client-principal:", error);
+  } catch {
     return null;
   }
 }
 
 function requireLogin(req, res) {
   const user = getUser(req);
-
   if (!user || !user.userId) {
-    res.status(401).json({
-      message: "Login required",
-    });
+    res.status(401).json({ message: "Login required" });
     return null;
   }
-
   return user;
 }
 
-function sanitizePartitionKey(value) {
+function sanitize(value) {
   return String(value || "unknown")
-    .replace(/[\\/#?]/g, "_")
-    .slice(0, 200);
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣_-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 60);
 }
 
-function getUserPartitionKey(user) {
-  return `DiveLog_${sanitizePartitionKey(user.userId)}`;
+function userPartition(userId) {
+  return `DiveLog_${String(userId).replace(/[\\/#?]/g, "_").slice(0, 200)}`;
 }
 
-async function uploadPhotoIfExists(file) {
+function makeSlug(user) {
+  const base =
+    user.userEmail?.split("@")[0] ||
+    user.userName ||
+    user.userId ||
+    crypto.randomUUID();
+
+  return sanitize(base);
+}
+
+async function ensureUserProfile(user) {
+  const client = tableClient(USER_TABLE);
+  await client.createTable();
+
+  const partitionKey = "User";
+  const rowKey = String(user.userId);
+
+  try {
+    const existing = await client.getEntity(partitionKey, rowKey);
+    return existing;
+  } catch {
+    const now = new Date().toISOString();
+    const profile = {
+      partitionKey,
+      rowKey,
+      userId: user.userId,
+      userEmail: user.userEmail,
+      displayName: user.userName || user.userEmail,
+      slug: makeSlug(user),
+      bio: "",
+      isPublicProfile: "true",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await client.createEntity(profile);
+    return profile;
+  }
+}
+
+async function findUserBySlug(slug) {
+  const client = tableClient(USER_TABLE);
+  await client.createTable();
+
+  for await (const user of client.listEntities({
+    queryOptions: {
+      filter: `PartitionKey eq 'User'`,
+    },
+  })) {
+    if (user.slug === slug) return user;
+  }
+
+  return null;
+}
+
+async function uploadPhoto(file) {
   if (!file) return "";
 
-  const containerClient = createBlobContainerClient();
-  await containerClient.createIfNotExists();
+  const container = blobContainerClient();
+  await container.createIfNotExists();
 
   const extension = path.extname(file.originalname) || ".jpg";
   const blobName = `${crypto.randomUUID()}${extension}`;
-  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  const blob = container.getBlockBlobClient(blobName);
 
-  await blockBlobClient.uploadData(file.buffer, {
-    blobHTTPHeaders: {
-      blobContentType: file.mimetype,
-    },
+  await blob.uploadData(file.buffer, {
+    blobHTTPHeaders: { blobContentType: file.mimetype },
   });
 
-  return blockBlobClient.url;
+  return blob.url;
 }
 
-function buildEntity(body, rowKey, photoUrl, createdAt, user) {
+function buildEntity(body, rowKey, photoUrl, createdAt, user, profile) {
   return {
-    partitionKey: getUserPartitionKey(user),
+    partitionKey: userPartition(user.userId),
     rowKey,
 
-    userId: user.userId || "",
-    userEmail: user.userEmail || "",
-    userName: user.userName || "",
+    userId: user.userId,
+    userEmail: user.userEmail,
+    userName: profile.displayName || user.userName || user.userEmail,
+    userSlug: profile.slug,
+
+    isPublic: body.isPublic === "true" ? "true" : "false",
 
     date: body.date || "",
     location: body.location || "",
@@ -165,111 +214,176 @@ function buildEntity(body, rowKey, photoUrl, createdAt, user) {
   };
 }
 
-function mapEntity(entity) {
+function mapEntity(e) {
   return {
-    partitionKey: entity.partitionKey,
-    rowKey: entity.rowKey,
+    partitionKey: e.partitionKey,
+    rowKey: e.rowKey,
 
-    userId: entity.userId,
-    userEmail: entity.userEmail,
-    userName: entity.userName,
+    userId: e.userId,
+    userEmail: e.userEmail,
+    userName: e.userName,
+    userSlug: e.userSlug,
 
-    date: entity.date,
-    location: entity.location,
-    diveSite: entity.diveSite,
-    diveNumber: entity.diveNumber,
+    isPublic: e.isPublic === "true",
 
-    buddy: entity.buddy,
-    shop: entity.shop,
+    date: e.date,
+    location: e.location,
+    diveSite: e.diveSite,
+    diveNumber: e.diveNumber,
 
-    startTime: entity.startTime,
-    endTime: entity.endTime,
-    surfaceInterval: entity.surfaceInterval,
+    buddy: e.buddy,
+    shop: e.shop,
 
-    maxDepth: entity.maxDepth,
-    avgDepth: entity.avgDepth,
-    bottomTime: entity.bottomTime,
-    waterTemp: entity.waterTemp,
-    visibility: entity.visibility,
-    current: entity.current,
-    wave: entity.wave,
-    weather: entity.weather,
-    entryType: entity.entryType,
+    startTime: e.startTime,
+    endTime: e.endTime,
+    surfaceInterval: e.surfaceInterval,
 
-    startPressure: entity.startPressure,
-    endPressure: entity.endPressure,
-    tankType: entity.tankType,
-    tankSize: entity.tankSize,
-    gasType: entity.gasType,
+    maxDepth: e.maxDepth,
+    avgDepth: e.avgDepth,
+    bottomTime: e.bottomTime,
+    waterTemp: e.waterTemp,
+    visibility: e.visibility,
+    current: e.current,
+    wave: e.wave,
+    weather: e.weather,
+    entryType: e.entryType,
 
-    residualNitrogen: entity.residualNitrogen,
-    planFollowed: entity.planFollowed,
+    startPressure: e.startPressure,
+    endPressure: e.endPressure,
+    tankType: e.tankType,
+    tankSize: e.tankSize,
+    gasType: e.gasType,
 
-    equipmentChecklist: entity.equipmentChecklist,
-    planChecklist: entity.planChecklist,
+    residualNitrogen: e.residualNitrogen,
+    planFollowed: e.planFollowed,
 
-    memo: entity.memo,
-    photoUrl: entity.photoUrl,
+    equipmentChecklist: e.equipmentChecklist,
+    planChecklist: e.planChecklist,
 
-    createdAt: entity.createdAt,
-    updatedAt: entity.updatedAt,
+    memo: e.memo,
+    photoUrl: e.photoUrl,
+
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
   };
 }
 
-app.get("/api/me", (req, res) => {
+app.get("/api/me", async (req, res) => {
   const user = getUser(req);
 
+  if (!user) {
+    return res.json({ authenticated: false, user: null, profile: null });
+  }
+
+  const profile = await ensureUserProfile(user);
+
   res.json({
-    authenticated: !!user,
+    authenticated: true,
     user,
+    profile,
+    myUrl: `/u/${profile.slug}`,
+  });
+});
+
+app.get("/api/users", async (req, res) => {
+  const client = tableClient(USER_TABLE);
+  await client.createTable();
+
+  const users = [];
+
+  for await (const u of client.listEntities({
+    queryOptions: { filter: `PartitionKey eq 'User'` },
+  })) {
+    if (u.isPublicProfile === "true") {
+      users.push({
+        displayName: u.displayName,
+        slug: u.slug,
+        bio: u.bio,
+      });
+    }
+  }
+
+  res.json({ users });
+});
+
+app.get("/api/feed", async (req, res) => {
+  const client = tableClient(LOG_TABLE);
+  await client.createTable();
+
+  const logs = [];
+
+  for await (const entity of client.listEntities()) {
+    if (entity.isPublic === "true") {
+      logs.push(mapEntity(entity));
+    }
+  }
+
+  logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  res.json({ logs });
+});
+
+app.get("/api/users/:slug/logs", async (req, res) => {
+  const profile = await findUserBySlug(req.params.slug);
+
+  if (!profile) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const viewer = getUser(req);
+  const isOwner = viewer?.userId === profile.userId;
+
+  const client = tableClient(LOG_TABLE);
+  await client.createTable();
+
+  const logs = [];
+
+  for await (const entity of client.listEntities({
+    queryOptions: {
+      filter: `PartitionKey eq '${userPartition(profile.userId)}'`,
+    },
+  })) {
+    if (isOwner || entity.isPublic === "true") {
+      logs.push(mapEntity(entity));
+    }
+  }
+
+  logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  res.json({
+    profile: {
+      displayName: profile.displayName,
+      slug: profile.slug,
+      bio: profile.bio,
+      isPublicProfile: profile.isPublicProfile,
+    },
+    isOwner,
+    logs,
   });
 });
 
 app.get("/api/logs", async (req, res) => {
-  try {
-    const user = getUser(req);
+  const user = requireLogin(req, res);
+  if (!user) return;
 
-    if (!user || !user.userId) {
-      return res.json({
-        logs: [],
-        viewer: true,
-        authenticated: false,
-      });
-    }
+  const profile = await ensureUserProfile(user);
 
-    const client = createTableClient();
-    await client.createTable();
+  const client = tableClient(LOG_TABLE);
+  await client.createTable();
 
-    const partitionKey = getUserPartitionKey(user);
-    const logs = [];
+  const logs = [];
 
-    for await (const entity of client.listEntities({
-      queryOptions: {
-        filter: `PartitionKey eq '${partitionKey}'`,
-      },
-    })) {
-      logs.push(mapEntity(entity));
-    }
-
-    logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-    res.json({
-      logs,
-      viewer: false,
-      authenticated: true,
-      user: {
-        userId: user.userId,
-        userEmail: user.userEmail,
-        userName: user.userName,
-      },
-    });
-  } catch (error) {
-    console.error("GET /api/logs failed:", error);
-    res.status(500).json({
-      message: "Failed to load logs",
-      error: error.message,
-    });
+  for await (const entity of client.listEntities({
+    queryOptions: {
+      filter: `PartitionKey eq '${userPartition(user.userId)}'`,
+    },
+  })) {
+    logs.push(mapEntity(entity));
   }
+
+  logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  res.json({ logs, profile, authenticated: true });
 });
 
 app.post("/api/logs", upload.single("photo"), async (req, res) => {
@@ -277,27 +391,22 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
     const user = requireLogin(req, res);
     if (!user) return;
 
-    const tableClient = createTableClient();
-    await tableClient.createTable();
+    const profile = await ensureUserProfile(user);
+    const client = tableClient(LOG_TABLE);
+    await client.createTable();
 
-    const photoUrl = await uploadPhotoIfExists(req.file);
     const rowKey = crypto.randomUUID();
+    const photoUrl = await uploadPhoto(req.file);
     const createdAt = new Date().toISOString();
 
-    const entity = buildEntity(req.body, rowKey, photoUrl, createdAt, user);
+    const entity = buildEntity(req.body, rowKey, photoUrl, createdAt, user, profile);
 
-    await tableClient.createEntity(entity);
+    await client.createEntity(entity);
 
-    res.status(201).json({
-      message: "Dive log saved",
-      rowKey,
-    });
+    res.status(201).json({ message: "saved", rowKey });
   } catch (error) {
     console.error("POST /api/logs failed:", error);
-    res.status(500).json({
-      message: "Failed to save log",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to save log", error: error.message });
   }
 });
 
@@ -306,22 +415,21 @@ app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
     const user = requireLogin(req, res);
     if (!user) return;
 
-    const tableClient = createTableClient();
-    await tableClient.createTable();
+    const profile = await ensureUserProfile(user);
+    const client = tableClient(LOG_TABLE);
+    await client.createTable();
 
-    const partitionKey = getUserPartitionKey(user);
-    const oldEntity = await tableClient.getEntity(partitionKey, req.params.rowKey);
+    const partitionKey = userPartition(user.userId);
+    const oldEntity = await client.getEntity(partitionKey, req.params.rowKey);
 
     if (oldEntity.userId !== user.userId) {
-      return res.status(403).json({
-        message: "You can edit only your own logs",
-      });
+      return res.status(403).json({ message: "Forbidden" });
     }
 
     let photoUrl = oldEntity.photoUrl || "";
 
     if (req.file) {
-      photoUrl = await uploadPhotoIfExists(req.file);
+      photoUrl = await uploadPhoto(req.file);
     } else if (req.body.keepExistingPhoto !== "true") {
       photoUrl = "";
     }
@@ -330,22 +438,17 @@ app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
       req.body,
       req.params.rowKey,
       photoUrl,
-      oldEntity.createdAt || new Date().toISOString(),
-      user
+      oldEntity.createdAt,
+      user,
+      profile
     );
 
-    await tableClient.updateEntity(entity, "Replace");
+    await client.updateEntity(entity, "Replace");
 
-    res.json({
-      message: "Dive log updated",
-      rowKey: req.params.rowKey,
-    });
+    res.json({ message: "updated", rowKey: req.params.rowKey });
   } catch (error) {
     console.error("PUT /api/logs failed:", error);
-    res.status(500).json({
-      message: "Failed to update log",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to update log", error: error.message });
   }
 });
 
@@ -354,29 +457,22 @@ app.delete("/api/logs/:rowKey", async (req, res) => {
     const user = requireLogin(req, res);
     if (!user) return;
 
-    const tableClient = createTableClient();
-    await tableClient.createTable();
+    const client = tableClient(LOG_TABLE);
+    await client.createTable();
 
-    const partitionKey = getUserPartitionKey(user);
-    const oldEntity = await tableClient.getEntity(partitionKey, req.params.rowKey);
+    const partitionKey = userPartition(user.userId);
+    const oldEntity = await client.getEntity(partitionKey, req.params.rowKey);
 
     if (oldEntity.userId !== user.userId) {
-      return res.status(403).json({
-        message: "You can delete only your own logs",
-      });
+      return res.status(403).json({ message: "Forbidden" });
     }
 
-    await tableClient.deleteEntity(partitionKey, req.params.rowKey);
+    await client.deleteEntity(partitionKey, req.params.rowKey);
 
-    res.json({
-      message: "Dive log deleted",
-    });
+    res.json({ message: "deleted" });
   } catch (error) {
     console.error("DELETE /api/logs failed:", error);
-    res.status(500).json({
-      message: "Failed to delete log",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to delete log", error: error.message });
   }
 });
 
