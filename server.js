@@ -38,6 +38,63 @@ function createBlobContainerClient() {
   return blobServiceClient.getContainerClient(BLOB_CONTAINER_NAME);
 }
 
+function getUser(req) {
+  const header = req.headers["x-ms-client-principal"];
+
+  if (!header) {
+    return null;
+  }
+
+  try {
+    const decoded = Buffer.from(header, "base64").toString("utf8");
+    const principal = JSON.parse(decoded);
+
+    const claims = principal.claims || [];
+
+    const emailClaim =
+      claims.find((claim) => claim.typ === "emails") ||
+      claims.find((claim) => claim.typ === "email") ||
+      claims.find((claim) => claim.typ?.endsWith("/emailaddress"));
+
+    const nameClaim =
+      claims.find((claim) => claim.typ === "name") ||
+      claims.find((claim) => claim.typ?.endsWith("/name"));
+
+    return {
+      userId: principal.userId || principal.userDetails || "",
+      userEmail: emailClaim?.val || principal.userDetails || "",
+      userName: nameClaim?.val || principal.userDetails || "",
+      identityProvider: principal.identityProvider || "",
+    };
+  } catch (error) {
+    console.error("Failed to parse x-ms-client-principal:", error);
+    return null;
+  }
+}
+
+function requireLogin(req, res) {
+  const user = getUser(req);
+
+  if (!user || !user.userId) {
+    res.status(401).json({
+      message: "Login required",
+    });
+    return null;
+  }
+
+  return user;
+}
+
+function sanitizePartitionKey(value) {
+  return String(value || "unknown")
+    .replace(/[\\/#?]/g, "_")
+    .slice(0, 200);
+}
+
+function getUserPartitionKey(user) {
+  return `DiveLog_${sanitizePartitionKey(user.userId)}`;
+}
+
 async function uploadPhotoIfExists(file) {
   if (!file) return "";
 
@@ -57,10 +114,14 @@ async function uploadPhotoIfExists(file) {
   return blockBlobClient.url;
 }
 
-function buildEntity(body, rowKey, photoUrl, createdAt) {
+function buildEntity(body, rowKey, photoUrl, createdAt, user) {
   return {
-    partitionKey: "DiveLog",
+    partitionKey: getUserPartitionKey(user),
     rowKey,
+
+    userId: user.userId || "",
+    userEmail: user.userEmail || "",
+    userName: user.userName || "",
 
     date: body.date || "",
     location: body.location || "",
@@ -106,7 +167,12 @@ function buildEntity(body, rowKey, photoUrl, createdAt) {
 
 function mapEntity(entity) {
   return {
+    partitionKey: entity.partitionKey,
     rowKey: entity.rowKey,
+
+    userId: entity.userId,
+    userEmail: entity.userEmail,
+    userName: entity.userName,
 
     date: entity.date,
     location: entity.location,
@@ -150,16 +216,36 @@ function mapEntity(entity) {
   };
 }
 
+app.get("/api/me", (req, res) => {
+  const user = getUser(req);
+
+  res.json({
+    authenticated: !!user,
+    user,
+  });
+});
+
 app.get("/api/logs", async (req, res) => {
   try {
+    const user = getUser(req);
+
+    if (!user || !user.userId) {
+      return res.json({
+        logs: [],
+        viewer: true,
+        authenticated: false,
+      });
+    }
+
     const client = createTableClient();
     await client.createTable();
 
+    const partitionKey = getUserPartitionKey(user);
     const logs = [];
 
     for await (const entity of client.listEntities({
       queryOptions: {
-        filter: `PartitionKey eq 'DiveLog'`,
+        filter: `PartitionKey eq '${partitionKey}'`,
       },
     })) {
       logs.push(mapEntity(entity));
@@ -167,7 +253,16 @@ app.get("/api/logs", async (req, res) => {
 
     logs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    res.json({ logs });
+    res.json({
+      logs,
+      viewer: false,
+      authenticated: true,
+      user: {
+        userId: user.userId,
+        userEmail: user.userEmail,
+        userName: user.userName,
+      },
+    });
   } catch (error) {
     console.error("GET /api/logs failed:", error);
     res.status(500).json({
@@ -179,6 +274,9 @@ app.get("/api/logs", async (req, res) => {
 
 app.post("/api/logs", upload.single("photo"), async (req, res) => {
   try {
+    const user = requireLogin(req, res);
+    if (!user) return;
+
     const tableClient = createTableClient();
     await tableClient.createTable();
 
@@ -186,7 +284,7 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
     const rowKey = crypto.randomUUID();
     const createdAt = new Date().toISOString();
 
-    const entity = buildEntity(req.body, rowKey, photoUrl, createdAt);
+    const entity = buildEntity(req.body, rowKey, photoUrl, createdAt, user);
 
     await tableClient.createEntity(entity);
 
@@ -205,10 +303,20 @@ app.post("/api/logs", upload.single("photo"), async (req, res) => {
 
 app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
   try {
+    const user = requireLogin(req, res);
+    if (!user) return;
+
     const tableClient = createTableClient();
     await tableClient.createTable();
 
-    const oldEntity = await tableClient.getEntity("DiveLog", req.params.rowKey);
+    const partitionKey = getUserPartitionKey(user);
+    const oldEntity = await tableClient.getEntity(partitionKey, req.params.rowKey);
+
+    if (oldEntity.userId !== user.userId) {
+      return res.status(403).json({
+        message: "You can edit only your own logs",
+      });
+    }
 
     let photoUrl = oldEntity.photoUrl || "";
 
@@ -222,7 +330,8 @@ app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
       req.body,
       req.params.rowKey,
       photoUrl,
-      oldEntity.createdAt || new Date().toISOString()
+      oldEntity.createdAt || new Date().toISOString(),
+      user
     );
 
     await tableClient.updateEntity(entity, "Replace");
@@ -242,8 +351,22 @@ app.put("/api/logs/:rowKey", upload.single("photo"), async (req, res) => {
 
 app.delete("/api/logs/:rowKey", async (req, res) => {
   try {
-    const client = createTableClient();
-    await client.deleteEntity("DiveLog", req.params.rowKey);
+    const user = requireLogin(req, res);
+    if (!user) return;
+
+    const tableClient = createTableClient();
+    await tableClient.createTable();
+
+    const partitionKey = getUserPartitionKey(user);
+    const oldEntity = await tableClient.getEntity(partitionKey, req.params.rowKey);
+
+    if (oldEntity.userId !== user.userId) {
+      return res.status(403).json({
+        message: "You can delete only your own logs",
+      });
+    }
+
+    await tableClient.deleteEntity(partitionKey, req.params.rowKey);
 
     res.json({
       message: "Dive log deleted",
