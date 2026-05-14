@@ -393,36 +393,70 @@ app.get("/api/water-temp", async (req, res) => {
   try {
     const apiKey = process.env.NIFS_API_KEY;
 
-    if (!apiKey) {
-      return res.status(500).json({
-        message: "NIFS_API_KEY is not configured",
-      });
-    }
-
     const url =
       `https://www.nifs.go.kr/OpenAPI_json?id=risaList&key=${apiKey}`;
 
     const response = await fetch(url);
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        message: "Failed to load NIFS API",
-      });
-    }
-
     const data = await response.json();
 
-    res.json(data);
+    const items = data?.body?.item || [];
+
+    const normalized = items
+      .filter((x) => x.repair_gbn === "1")
+      .map((x) => ({
+        station: x.sta_nam_kor,
+        code: x.sta_cde,
+        temperature: Number(x.wtr_tmp),
+        layer:
+          x.obs_lay === "1"
+            ? "표층"
+            : x.obs_lay === "2"
+            ? "중층"
+            : "저층",
+        date: x.obs_dat,
+        time: x.obs_tim,
+      }));
+
+    res.json(normalized);
   } catch (error) {
-    console.error("GET /api/water-temp failed:", error);
+    console.error(error);
 
     res.status(500).json({
       message: "Failed to load water temperature",
-      error: error.message,
     });
   }
 });
 
+app.get("/api/water-stations", async (req, res) => {
+  try {
+    const apiKey = process.env.NIFS_API_KEY;
+
+    const url =
+      `https://www.nifs.go.kr/OpenAPI_json?id=risaCode&key=${apiKey}&use_yn=T`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const items = data?.body?.item || [];
+
+    const normalized = items.map((x) => ({
+      station: x.sta_nam_kor,
+      code: x.sta_cde,
+      area: x.gru_nam,
+      lat: Number(x.lat),
+      lon: Number(x.lon),
+      description: x.sta_des,
+    }));
+
+    res.json(normalized);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to load station info",
+    });
+  }
+});
 
 app.post("/api/logs", upload.single("photo"), async (req, res) => {
   try {

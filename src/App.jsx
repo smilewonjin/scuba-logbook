@@ -1216,7 +1216,7 @@ function WaterTemperaturePanel() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadWaterTemp = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
 
@@ -1232,8 +1232,15 @@ function WaterTemperaturePanel() {
   };
 
   useEffect(() => {
-    loadWaterTemp();
+    loadData();
   }, []);
+
+  const getTempClass = (temp) => {
+    if (temp >= 26) return "hot";
+    if (temp >= 20) return "good";
+    if (temp >= 15) return "cool";
+    return "cold";
+  };
 
   return (
     <section className="panel">
@@ -1243,7 +1250,7 @@ function WaterTemperaturePanel() {
           <h2>실시간 바다 수온</h2>
         </div>
 
-        <button className="small-button" onClick={loadWaterTemp}>
+        <button className="small-button" onClick={loadData}>
           새로고침
         </button>
       </div>
@@ -1253,7 +1260,10 @@ function WaterTemperaturePanel() {
       ) : (
         <div className="water-temp-grid">
           {items.slice(0, 8).map((item, index) => (
-            <article className="water-card" key={index}>
+            <article
+              className={`water-card ${getTempClass(item.temperature)}`}
+              key={index}
+            >
               <strong>{item.station}</strong>
 
               <span>{item.temperature}°C</span>
@@ -1267,7 +1277,7 @@ function WaterTemperaturePanel() {
       )}
 
       <p className="table-warning">
-        ※ 국립수산과학원 OpenAPI 실시간 어장정보 기반
+        ※ 국립수산과학원 실시간 어장정보 OpenAPI 기반
       </p>
     </section>
   );
