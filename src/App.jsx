@@ -505,32 +505,32 @@ export default function App() {
 
           <section className="safety-strip">
             <div>
-              <strong>계획된 다이빙</strong>
+              <strong>📋 계획된 다이빙</strong>
               <span>다이빙 계획을 세우고 버디와 공유하세요.</span>
             </div>
 
             <div>
-              <strong>버디 시스템</strong>
+              <strong>🤝 버디 시스템</strong>
               <span>항상 버디와 함께 다이빙하세요.</span>
             </div>
 
             <div>
-              <strong>안전 정지</strong>
+              <strong>🛑 안전 정지</strong>
               <span>5m에서 3~5분 안전정지를 하세요.</span>
             </div>
 
             <div>
-              <strong>천천히 상승</strong>
+              <strong>⬆️ 천천히 상승</strong>
               <span>분당 9m 이내로 천천히 상승하세요.</span>
             </div>
 
             <div>
-              <strong>수분 섭취</strong>
+              <strong>💧 수분 섭취</strong>
               <span>충분한 수분 섭취로 감압병을 예방하세요.</span>
             </div>
 
             <div>
-              <strong>컨디션 체크</strong>
+              <strong>❤️ 컨디션 체크</strong>
               <span>건강한 상태에서만 다이빙하세요.</span>
             </div>
           </section>
