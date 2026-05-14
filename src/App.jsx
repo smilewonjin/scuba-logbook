@@ -499,7 +499,7 @@ export default function App() {
             </a>
           </section>
 
-          <WaterTemperaturePanel />
+          {/* <WaterTemperaturePanel /> */}
 
           <section id="dive-tables" className="panel">
             <DivePlanner />
