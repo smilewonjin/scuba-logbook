@@ -500,47 +500,7 @@ export default function App() {
           </section>
 
           <section id="dive-tables" className="panel">
-            <div className="section-title">
-              <p>DIVE TABLES</p>
-              <h2>반복다이빙 계획표</h2>
-            </div>
-
-            <div className="dive-process">
-              <div>
-                <strong>1</strong>
-                <span>최초 잠수</span>
-                <p>최대수심 + 잠수시간으로 잠수그룹 결정</p>
-              </div>
-              <div>
-                <strong>2</strong>
-                <span>수면휴식</span>
-                <p>SIT에 따라 새로운 잠수그룹으로 재조정</p>
-              </div>
-              <div>
-                <strong>3</strong>
-                <span>재잠수 계획</span>
-                <p>RNT / AMDT 확인 후 실제 잠수시간 계획</p>
-              </div>
-            </div>
-
-            <div className="table-link-grid">
-              <a className="table-link-card" href="#first-dive-group">
-                <strong>표 1</strong>
-                <span>최초 잠수그룹 산정표</span>
-              </a>
-              <a className="table-link-card" href="#surface-interval">
-                <strong>표 2</strong>
-                <span>수면휴식 후 그룹 재조정표</span>
-              </a>
-              <a className="table-link-card" href="#rnt-amdt">
-                <strong>표 3</strong>
-                <span>재잠수 RNT / AMDT 표</span>
-              </a>
-            </div>
-
-            <p className="table-warning">
-              ※ 이 표는 기록/학습용 참고자료입니다. 실제 다이빙 계획은 교육기관 기준과 다이브컴퓨터를 우선하세요.
-            </p>
+            <DivePlanner />
           </section>
 
           <section className="safety-strip">
@@ -1082,5 +1042,156 @@ function ChecklistView({ title, items, values }) {
         ))}
       </div>
     </div>
+  );
+}
+
+const DEPTHS = [12, 14, 16, 18, 20, 22, 25, 30, 35, 40];
+
+const FIRST_DIVE_GROUP_TABLE = [
+  { depth: 12, times: [{ max: 40, group: "C" }, { max: 80, group: "F" }, { max: 147, group: "L" }] },
+  { depth: 14, times: [{ max: 30, group: "C" }, { max: 60, group: "F" }, { max: 98, group: "K" }] },
+  { depth: 16, times: [{ max: 25, group: "D" }, { max: 50, group: "G" }, { max: 72, group: "J" }] },
+  { depth: 18, times: [{ max: 20, group: "D" }, { max: 30, group: "F" }, { max: 56, group: "J" }] },
+  { depth: 20, times: [{ max: 20, group: "E" }, { max: 35, group: "H" }, { max: 45, group: "J" }] },
+  { depth: 22, times: [{ max: 16, group: "E" }, { max: 25, group: "G" }, { max: 37, group: "I" }] },
+  { depth: 25, times: [{ max: 15, group: "F" }, { max: 20, group: "H" }, { max: 29, group: "J" }] },
+  { depth: 30, times: [{ max: 10, group: "F" }, { max: 15, group: "H" }, { max: 20, group: "J" }] },
+  { depth: 35, times: [{ max: 8, group: "G" }, { max: 12, group: "I" }, { max: 14, group: "J" }] },
+  { depth: 40, times: [{ max: 5, group: "F" }, { max: 8, group: "H" }, { max: 9, group: "I" }] },
+];
+
+const SURFACE_INTERVAL_TABLE = {
+  A: [{ min: 0, max: 59, group: "A" }, { min: 60, max: 999, group: "A" }],
+  B: [{ min: 0, max: 59, group: "B" }, { min: 60, max: 119, group: "A" }, { min: 120, max: 999, group: "A" }],
+  C: [{ min: 0, max: 59, group: "C" }, { min: 60, max: 119, group: "B" }, { min: 120, max: 999, group: "A" }],
+  D: [{ min: 0, max: 59, group: "D" }, { min: 60, max: 119, group: "C" }, { min: 120, max: 179, group: "B" }, { min: 180, max: 999, group: "A" }],
+  E: [{ min: 0, max: 59, group: "E" }, { min: 60, max: 119, group: "D" }, { min: 120, max: 179, group: "C" }, { min: 180, max: 239, group: "B" }, { min: 240, max: 999, group: "A" }],
+  F: [{ min: 0, max: 59, group: "F" }, { min: 60, max: 119, group: "E" }, { min: 120, max: 179, group: "D" }, { min: 180, max: 239, group: "C" }, { min: 240, max: 999, group: "B" }],
+  G: [{ min: 0, max: 59, group: "G" }, { min: 60, max: 119, group: "F" }, { min: 120, max: 179, group: "E" }, { min: 180, max: 239, group: "D" }, { min: 240, max: 999, group: "C" }],
+  H: [{ min: 0, max: 59, group: "H" }, { min: 60, max: 119, group: "G" }, { min: 120, max: 179, group: "F" }, { min: 180, max: 239, group: "E" }, { min: 240, max: 999, group: "D" }],
+  I: [{ min: 0, max: 59, group: "I" }, { min: 60, max: 119, group: "H" }, { min: 120, max: 179, group: "G" }, { min: 180, max: 239, group: "F" }, { min: 240, max: 999, group: "E" }],
+  J: [{ min: 0, max: 59, group: "J" }, { min: 60, max: 119, group: "I" }, { min: 120, max: 179, group: "H" }, { min: 180, max: 239, group: "G" }, { min: 240, max: 999, group: "F" }],
+  K: [{ min: 0, max: 59, group: "K" }, { min: 60, max: 119, group: "J" }, { min: 120, max: 179, group: "I" }, { min: 180, max: 239, group: "H" }, { min: 240, max: 999, group: "G" }],
+  L: [{ min: 0, max: 59, group: "L" }, { min: 60, max: 119, group: "K" }, { min: 120, max: 179, group: "J" }, { min: 180, max: 239, group: "I" }, { min: 240, max: 999, group: "H" }],
+};
+
+const RNT_AMDT_TABLE = {
+  A: { 12: [10, 137], 14: [9, 89], 16: [8, 64], 18: [7, 49], 20: [6, 39], 22: [5, 32], 25: [5, 24], 30: [4, 16], 35: [3, 11], 40: [3, 6] },
+  B: { 12: [15, 132], 14: [13, 85], 16: [12, 60], 18: [10, 46], 20: [9, 36], 22: [8, 29], 25: [7, 22], 30: [6, 14], 35: [5, 9], 40: [4, 5] },
+  C: { 12: [20, 127], 14: [18, 80], 16: [15, 57], 18: [13, 43], 20: [12, 33], 22: [10, 27], 25: [9, 20], 30: [8, 12], 35: [6, 8], 40: [5, 4] },
+  D: { 12: [28, 119], 14: [24, 74], 16: [20, 52], 18: [17, 39], 20: [15, 30], 22: [13, 24], 25: [11, 18], 30: [9, 11], 35: [7, 7], 40: [5, 4] },
+  E: { 12: [35, 112], 14: [30, 68], 16: [25, 47], 18: [20, 36], 20: [18, 27], 22: [16, 21], 25: [14, 15], 30: [10, 10], 35: [8, 6], 40: [5, 4] },
+  F: { 12: [42, 105], 14: [36, 62], 16: [30, 42], 18: [25, 31], 20: [22, 23], 22: [19, 18], 25: [16, 13], 30: [12, 8], 35: [9, 5], 40: [6, 3] },
+  G: { 12: [50, 97], 14: [42, 56], 16: [35, 37], 18: [29, 27], 20: [25, 20], 22: [22, 15], 25: [18, 11], 30: [14, 6], 35: [10, 4], 40: [7, 2] },
+  H: { 12: [60, 87], 14: [50, 48], 16: [42, 30], 18: [34, 22], 20: [29, 16], 22: [25, 12], 25: [20, 9], 30: [15, 5], 35: [11, 3], 40: [8, 1] },
+  I: { 12: [70, 77], 14: [58, 40], 16: [48, 24], 18: [38, 18], 20: [32, 13], 22: [28, 9], 25: [22, 7], 30: [16, 4], 35: [12, 2], 40: [9, 0] },
+  J: { 12: [80, 67], 14: [66, 32], 16: [55, 17], 18: [43, 13], 20: [36, 9], 22: [31, 6], 25: [24, 5], 30: [18, 2], 35: [13, 1], 40: [9, 0] },
+  K: { 12: [90, 57], 14: [75, 23], 16: [62, 10], 18: [48, 8], 20: [40, 5], 22: [34, 3], 25: [26, 3], 30: [19, 1], 35: [14, 0], 40: [9, 0] },
+  L: { 12: [100, 47], 14: [82, 16], 16: [68, 4], 18: [52, 4], 20: [43, 2], 22: [36, 1], 25: [28, 1], 30: [20, 0], 35: [14, 0], 40: [9, 0] },
+};
+
+function getNextDepth(depth) {
+  return DEPTHS.find((d) => Number(depth) <= d) || null;
+}
+
+function calculateDivePlan(depth, bottomTime, sit) {
+  const roundedDepth = getNextDepth(depth);
+  const firstRow = FIRST_DIVE_GROUP_TABLE.find((row) => row.depth === roundedDepth);
+  const firstGroup = firstRow?.times.find((t) => Number(bottomTime) <= t.max)?.group || null;
+
+  const adjustedGroup =
+    SURFACE_INTERVAL_TABLE[firstGroup]?.find(
+      (row) => Number(sit) >= row.min && Number(sit) <= row.max
+    )?.group || null;
+
+  return { roundedDepth, firstGroup, adjustedGroup };
+}
+
+function DivePlanner() {
+  const [depth, setDepth] = useState("18");
+  const [bottomTime, setBottomTime] = useState("30");
+  const [sit, setSit] = useState("60");
+
+  const result = calculateDivePlan(depth, bottomTime, sit);
+  const rntRows = result.adjustedGroup
+    ? DEPTHS.map((d) => {
+        const data = RNT_AMDT_TABLE[result.adjustedGroup]?.[d];
+        return { depth: d, rnt: data?.[0] ?? "-", amdt: data?.[1] ?? "-" };
+      })
+    : [];
+
+  return (
+    <>
+      <div className="section-title">
+        <p>DIVE TABLE CALCULATOR</p>
+        <h2>반복다이빙 자동 계산</h2>
+      </div>
+
+      <div className="planner-grid">
+        <div className="planner-step">
+          <strong>1</strong>
+          <h3>최초 잠수</h3>
+          <label>
+            최대수심(m)
+            <input value={depth} onChange={(e) => setDepth(e.target.value)} />
+          </label>
+          <label>
+            잠수시간(min)
+            <input value={bottomTime} onChange={(e) => setBottomTime(e.target.value)} />
+          </label>
+          <div className="planner-result">
+            최초그룹 <b>{result.firstGroup || "-"}</b>
+          </div>
+        </div>
+
+        <div className="planner-step">
+          <strong>2</strong>
+          <h3>수면 휴식</h3>
+          <label>
+            수면휴식 시간(min)
+            <input value={sit} onChange={(e) => setSit(e.target.value)} />
+          </label>
+          <div className="planner-result">
+            조정그룹 <b>{result.adjustedGroup || "-"}</b>
+          </div>
+        </div>
+
+        <div className="planner-step">
+          <strong>3</strong>
+          <h3>결과</h3>
+          <p>
+            입력 수심은 표 기준에 맞춰 <b>{result.roundedDepth || "-"}m</b>로 계산됩니다.
+          </p>
+          <p>
+            예: 18m / 30분 / SIT 60분 → F 그룹 → E 그룹
+          </p>
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table className="dive-table">
+          <thead>
+            <tr>
+              <th>재잠수 수심</th>
+              <th>잔류질소 RNT</th>
+              <th>조정 최대잠수시간 AMDT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rntRows.map((row) => (
+              <tr key={row.depth}>
+                <td>{row.depth}m</td>
+                <td>{row.rnt}분</td>
+                <td>{row.amdt}분</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="table-warning">
+        ※ 이 계산기는 기록/학습용 참고 기능입니다. 실제 다이빙 계획은 본인 교육기관 표와 다이브컴퓨터를 우선하세요.
+      </p>
+    </>
   );
 }
