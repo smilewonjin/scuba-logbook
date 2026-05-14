@@ -1223,12 +1223,7 @@ function WaterTemperaturePanel() {
       const response = await fetch("/api/water-temp");
       const data = await response.json();
 
-      const rows =
-        data?.response?.body?.items ||
-        data?.items ||
-        [];
-
-      setItems(rows);
+      setItems(data || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -1259,23 +1254,12 @@ function WaterTemperaturePanel() {
         <div className="water-temp-grid">
           {items.slice(0, 8).map((item, index) => (
             <article className="water-card" key={index}>
-              <strong>
-                {item.obs_post_name ||
-                  item.gugun ||
-                  item.area ||
-                  "관측소"}
-              </strong>
+              <strong>{item.station}</strong>
 
-              <span>
-                {item.water_temp ||
-                  item.temp ||
-                  "-"}°C
-              </span>
+              <span>{item.temperature}°C</span>
 
               <small>
-                {item.obs_time ||
-                  item.time ||
-                  ""}
+                {item.layer} · {item.time}
               </small>
             </article>
           ))}
@@ -1283,7 +1267,7 @@ function WaterTemperaturePanel() {
       )}
 
       <p className="table-warning">
-        ※ 국립수산과학원 OpenAPI 기반 실시간 수온 정보
+        ※ 국립수산과학원 OpenAPI 실시간 어장정보 기반
       </p>
     </section>
   );
