@@ -1045,49 +1045,44 @@ function ChecklistView({ title, items, values }) {
   );
 }
 
-const DEPTHS = [12, 14, 16, 18, 20, 22, 25, 30, 35, 40];
+const DEPTHS = [12, 15, 18, 21, 24, 27, 30, 33, 36, 40];
 
 const FIRST_DIVE_GROUP_TABLE = [
-  { depth: 12, times: [{ max: 40, group: "C" }, { max: 80, group: "F" }, { max: 147, group: "L" }] },
-  { depth: 14, times: [{ max: 30, group: "C" }, { max: 60, group: "F" }, { max: 98, group: "K" }] },
-  { depth: 16, times: [{ max: 25, group: "D" }, { max: 50, group: "G" }, { max: 72, group: "J" }] },
-  { depth: 18, times: [{ max: 20, group: "D" }, { max: 30, group: "F" }, { max: 56, group: "J" }] },
-  { depth: 20, times: [{ max: 20, group: "E" }, { max: 35, group: "H" }, { max: 45, group: "J" }] },
-  { depth: 22, times: [{ max: 16, group: "E" }, { max: 25, group: "G" }, { max: 37, group: "I" }] },
-  { depth: 25, times: [{ max: 15, group: "F" }, { max: 20, group: "H" }, { max: 29, group: "J" }] },
-  { depth: 30, times: [{ max: 10, group: "F" }, { max: 15, group: "H" }, { max: 20, group: "J" }] },
-  { depth: 35, times: [{ max: 8, group: "G" }, { max: 12, group: "I" }, { max: 14, group: "J" }] },
-  { depth: 40, times: [{ max: 5, group: "F" }, { max: 8, group: "H" }, { max: 9, group: "I" }] },
+  { depth: 12, times: [{ max: 25, group: "C" }, { max: 30, group: "D" }, { max: 40, group: "E" }, { max: 50, group: "F" }, { max: 70, group: "G" }] },
+  { depth: 15, times: [{ max: 25, group: "D" }, { max: 30, group: "E" }, { max: 40, group: "F" }, { max: 50, group: "G" }, { max: 60, group: "H" }] },
+  { depth: 18, times: [{ max: 15, group: "C" }, { max: 25, group: "D" }, { max: 30, group: "F" }, { max: 40, group: "G" }, { max: 50, group: "H" }] },
+  { depth: 21, times: [{ max: 10, group: "C" }, { max: 15, group: "D" }, { max: 20, group: "E" }, { max: 30, group: "F" }, { max: 35, group: "G" }, { max: 40, group: "H" }, { max: 45, group: "I" }] },
+  { depth: 24, times: [{ max: 10, group: "C" }, { max: 15, group: "D" }, { max: 20, group: "E" }, { max: 25, group: "F" }, { max: 30, group: "G" }, { max: 35, group: "H" }] },
+  { depth: 27, times: [{ max: 10, group: "C" }, { max: 12, group: "D" }, { max: 15, group: "E" }, { max: 20, group: "F" }, { max: 25, group: "G" }] },
+  { depth: 30, times: [{ max: 7, group: "C" }, { max: 10, group: "D" }, { max: 15, group: "E" }, { max: 20, group: "F" }, { max: 20, group: "F" }, { max: 22, group: "G" }] },
+  { depth: 33, times: [{ max: 5, group: "C" }, { max: 10, group: "D" }, { max: 13, group: "E" }, { max: 15, group: "F" }] },
+  { depth: 36, times: [{ max: 5, group: "C" }, { max: 10, group: "D" }, { max: 12, group: "E" }] },
+  { depth: 40, times: [{ max: 5, group: "D" }, { max: 8, group: "D" }] },
 ];
 
 const SURFACE_INTERVAL_TABLE = {
-  A: [{ min: 0, max: 59, group: "A" }, { min: 60, max: 999, group: "A" }],
-  B: [{ min: 0, max: 59, group: "B" }, { min: 60, max: 119, group: "A" }, { min: 120, max: 999, group: "A" }],
-  C: [{ min: 0, max: 59, group: "C" }, { min: 60, max: 119, group: "B" }, { min: 120, max: 999, group: "A" }],
-  D: [{ min: 0, max: 59, group: "D" }, { min: 60, max: 119, group: "C" }, { min: 120, max: 179, group: "B" }, { min: 180, max: 999, group: "A" }],
-  E: [{ min: 0, max: 59, group: "E" }, { min: 60, max: 119, group: "D" }, { min: 120, max: 179, group: "C" }, { min: 180, max: 239, group: "B" }, { min: 240, max: 999, group: "A" }],
-  F: [{ min: 0, max: 59, group: "F" }, { min: 60, max: 119, group: "E" }, { min: 120, max: 179, group: "D" }, { min: 180, max: 239, group: "C" }, { min: 240, max: 999, group: "B" }],
-  G: [{ min: 0, max: 59, group: "G" }, { min: 60, max: 119, group: "F" }, { min: 120, max: 179, group: "E" }, { min: 180, max: 239, group: "D" }, { min: 240, max: 999, group: "C" }],
-  H: [{ min: 0, max: 59, group: "H" }, { min: 60, max: 119, group: "G" }, { min: 120, max: 179, group: "F" }, { min: 180, max: 239, group: "E" }, { min: 240, max: 999, group: "D" }],
-  I: [{ min: 0, max: 59, group: "I" }, { min: 60, max: 119, group: "H" }, { min: 120, max: 179, group: "G" }, { min: 180, max: 239, group: "F" }, { min: 240, max: 999, group: "E" }],
-  J: [{ min: 0, max: 59, group: "J" }, { min: 60, max: 119, group: "I" }, { min: 120, max: 179, group: "H" }, { min: 180, max: 239, group: "G" }, { min: 240, max: 999, group: "F" }],
-  K: [{ min: 0, max: 59, group: "K" }, { min: 60, max: 119, group: "J" }, { min: 120, max: 179, group: "I" }, { min: 180, max: 239, group: "H" }, { min: 240, max: 999, group: "G" }],
-  L: [{ min: 0, max: 59, group: "L" }, { min: 60, max: 119, group: "K" }, { min: 120, max: 179, group: "J" }, { min: 180, max: 239, group: "I" }, { min: 240, max: 999, group: "H" }],
+  A: [{ min: 10, max: 1440, group: "A" }],
+  B: [{ min: 10, max: 200, group: "B" }, { min: 201, max: 1440, group: "A" }],
+  C: [{ min: 10, max: 99, group: "C" }, { min: 100, max: 289, group: "B" }, { min: 290, max: 1440, group: "A" }],
+  D: [{ min: 10, max: 69, group: "D" }, { min: 70, max: 158, group: "C" }, { min: 159, max: 348, group: "B" }, { min: 349, max: 1440, group: "A" }],
+  E: [{ min: 10, max: 54, group: "E" }, { min: 55, max: 117, group: "D" }, { min: 118, max: 204, group: "C" }, { min: 205, max: 394, group: "B" }, { min: 395, max: 1440, group: "A" }],
+  F: [{ min: 10, max: 45, group: "F" }, { min: 46, max: 89, group: "E" }, { min: 90, max: 148, group: "D" }, { min: 149, max: 237, group: "C" }, { min: 238, max: 425, group: "B" }, { min: 426, max: 1440, group: "A" }],
+  G: [{ min: 10, max: 40, group: "G" }, { min: 41, max: 75, group: "F" }, { min: 76, max: 119, group: "E" }, { min: 120, max: 178, group: "D" }, { min: 179, max: 165, group: "C" }, { min: 166, max: 455, group: "B" }, { min: 456, max: 1440, group: "A" }],
+  H: [{ min: 10, max: 36, group: "H" }, { min: 37, max: 66, group: "G" }, { min: 67, max: 101, group: "F" }, { min: 102, max: 143, group: "E" }, { min: 144, max: 200, group: "D" }, { min: 144, max: 289, group: "C" }, { min: 290, max: 479, group: "B" }, { min: 480, max: 1440, group: "B" }],
+  I: [{ min: 10, max: 33, group: "I" }, { min: 34, max: 59, group: "H" }, { min: 60, max: 89, group: "G" }, { min: 90, max: 122, group: "F" }, { min: 123, max: 164, group: "E" }, { min: 165, max: 223, group: "D" }, { min: 224, max: 312, group: "C" }, { min: 313, max: 501, group: "B" }, { min: 502, max: 1440, group: "A" }],
+ 
 };
 
 const RNT_AMDT_TABLE = {
-  A: { 12: [10, 137], 14: [9, 89], 16: [8, 64], 18: [7, 49], 20: [6, 39], 22: [5, 32], 25: [5, 24], 30: [4, 16], 35: [3, 11], 40: [3, 6] },
-  B: { 12: [15, 132], 14: [13, 85], 16: [12, 60], 18: [10, 46], 20: [9, 36], 22: [8, 29], 25: [7, 22], 30: [6, 14], 35: [5, 9], 40: [4, 5] },
-  C: { 12: [20, 127], 14: [18, 80], 16: [15, 57], 18: [13, 43], 20: [12, 33], 22: [10, 27], 25: [9, 20], 30: [8, 12], 35: [6, 8], 40: [5, 4] },
-  D: { 12: [28, 119], 14: [24, 74], 16: [20, 52], 18: [17, 39], 20: [15, 30], 22: [13, 24], 25: [11, 18], 30: [9, 11], 35: [7, 7], 40: [5, 4] },
-  E: { 12: [35, 112], 14: [30, 68], 16: [25, 47], 18: [20, 36], 20: [18, 27], 22: [16, 21], 25: [14, 15], 30: [10, 10], 35: [8, 6], 40: [5, 4] },
-  F: { 12: [42, 105], 14: [36, 62], 16: [30, 42], 18: [25, 31], 20: [22, 23], 22: [19, 18], 25: [16, 13], 30: [12, 8], 35: [9, 5], 40: [6, 3] },
-  G: { 12: [50, 97], 14: [42, 56], 16: [35, 37], 18: [29, 27], 20: [25, 20], 22: [22, 15], 25: [18, 11], 30: [14, 6], 35: [10, 4], 40: [7, 2] },
-  H: { 12: [60, 87], 14: [50, 48], 16: [42, 30], 18: [34, 22], 20: [29, 16], 22: [25, 12], 25: [20, 9], 30: [15, 5], 35: [11, 3], 40: [8, 1] },
-  I: { 12: [70, 77], 14: [58, 40], 16: [48, 24], 18: [38, 18], 20: [32, 13], 22: [28, 9], 25: [22, 7], 30: [16, 4], 35: [12, 2], 40: [9, 0] },
-  J: { 12: [80, 67], 14: [66, 32], 16: [55, 17], 18: [43, 13], 20: [36, 9], 22: [31, 6], 25: [24, 5], 30: [18, 2], 35: [13, 1], 40: [9, 0] },
-  K: { 12: [90, 57], 14: [75, 23], 16: [62, 10], 18: [48, 8], 20: [40, 5], 22: [34, 3], 25: [26, 3], 30: [19, 1], 35: [14, 0], 40: [9, 0] },
-  L: { 12: [100, 47], 14: [82, 16], 16: [68, 4], 18: [52, 4], 20: [43, 2], 22: [36, 1], 25: [28, 1], 30: [20, 0], 35: [14, 0], 40: [9, 0] },
+  A: { 12: [7, 123], 15: [6, 74], 18: [5, 50], 21: [4, 41], 24: [4, 31], 27: [3, 22], 30: [3, 19], 33: [3, 12], 36: [3, 9], 40: [3, 5] },
+  B: { 12: [17, 113], 15: [13, 67], 18: [11, 44], 21: [9, 36], 24: [8, 27], 27: [7, 18], 30: [7, 15], 33: [6, 9], 36: [6, 6], 40: [6, ] },
+  C: { 12: [25, 105], 15: [21, 59], 18: [17, 38], 21: [15, 30], 24: [13, 22], 27: [11, 14], 30: [10, 12], 33: [10, 5], 36: [9, ], 40: [8, ] },
+  D: { 12: [37, 93], 15: [29, 51], 18: [24, 31], 21: [20, 25], 24: [18, 17], 27: [16, 9], 30: [14, 8], 33: [13, ], 36: [12, ], 40: [11, ] },
+  E: { 12: [49, 81], 15: [38, 42], 18: [30, 25], 21: [26, 19], 24: [23, 12], 27: [20, 5], 30: [18, 4], 33: [16, ], 36: [15, ], 40: [13, ] },
+  F: { 12: [61, 69], 15: [47, 33], 18: [39, 19], 21: [31, 14], 24: [28, 7], 27: [24, ], 30: [22, ], 33: [20, ], 36: [18, ], 40: [16, ] },
+  G: { 12: [73, 57], 15: [56, 24], 18: [44, 11], 21: [37, 8], 24: [32, ], 27: [29, ], 30: [26, ], 33: [24, ], 36: [21, ], 40: [19, ] },
+  H: { 12: [87, 43], 15: [66, 14], 18: [52, ], 21: [43, ], 24: [38, ], 27: [33, ], 30: [30, ], 33: [27, ], 36: [25, ], 40: [22, ] },
+  I: { 12: [101, 29], 15: [76, 4], 18: [61, ], 21: [50, ], 24: [43, ], 27: [38, ], 30: [34, ], 33: [31, ], 36: [28, ], 40: [25, ] },  
 };
 
 function getNextDepth(depth) {
@@ -1096,15 +1091,34 @@ function getNextDepth(depth) {
 
 function calculateDivePlan(depth, bottomTime, sit) {
   const roundedDepth = getNextDepth(depth);
-  const firstRow = FIRST_DIVE_GROUP_TABLE.find((row) => row.depth === roundedDepth);
-  const firstGroup = firstRow?.times.find((t) => Number(bottomTime) <= t.max)?.group || null;
+
+  const firstRow = FIRST_DIVE_GROUP_TABLE.find(
+    (row) => row.depth === roundedDepth
+  );
+
+  let firstGroup = null;
+
+  if (firstRow) {
+    for (const t of firstRow.times) {
+      if (Number(bottomTime) <= t.max) {
+        firstGroup = t.group;
+        break;
+      }
+    }
+  }
 
   const adjustedGroup =
     SURFACE_INTERVAL_TABLE[firstGroup]?.find(
-      (row) => Number(sit) >= row.min && Number(sit) <= row.max
-    )?.group || null;
+      (row) =>
+        Number(sit) >= row.min &&
+        Number(sit) <= row.max
+    )?.group || firstGroup;
 
-  return { roundedDepth, firstGroup, adjustedGroup };
+  return {
+    roundedDepth,
+    firstGroup,
+    adjustedGroup,
+  };
 }
 
 function DivePlanner() {
