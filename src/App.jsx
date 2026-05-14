@@ -1214,6 +1214,7 @@ function DivePlanner() {
 
 function WaterTemperaturePanel() {
   const [items, setItems] = useState([]);
+  const [selectedStation, setSelectedStation] = useState("강릉");
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -1226,6 +1227,7 @@ function WaterTemperaturePanel() {
       setItems(data || []);
     } catch (error) {
       console.error(error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -1235,12 +1237,17 @@ function WaterTemperaturePanel() {
     loadData();
   }, []);
 
-  const getTempClass = (temp) => {
-    if (temp >= 26) return "hot";
-    if (temp >= 20) return "good";
-    if (temp >= 15) return "cool";
-    return "cold";
-  };
+  const stations = Array.from(
+    new Set(items.map((item) => item.station).filter(Boolean))
+  ).sort();
+
+  const selectedItems = items.filter((item) =>
+    item.station?.includes(selectedStation)
+  );
+
+  const surface = selectedItems.find((item) => item.layer === "표층");
+  const middle = selectedItems.find((item) => item.layer === "중층");
+  const bottom = selectedItems.find((item) => item.layer === "저층");
 
   return (
     <section className="panel">
@@ -1255,24 +1262,37 @@ function WaterTemperaturePanel() {
         </button>
       </div>
 
+      <div className="water-temp-selector">
+        <label>
+          관측소 선택
+          <select
+            value={selectedStation}
+            onChange={(e) => setSelectedStation(e.target.value)}
+          >
+            {stations.includes("강릉") && <option value="강릉">강릉</option>}
+
+            {stations
+              .filter((station) => station !== "강릉")
+              .map((station) => (
+                <option key={station} value={station}>
+                  {station}
+                </option>
+              ))}
+          </select>
+        </label>
+      </div>
+
       {loading ? (
         <p>수온 정보를 불러오는 중...</p>
+      ) : selectedItems.length === 0 ? (
+        <div className="empty-state">
+          선택한 관측소의 수온 정보가 없습니다.
+        </div>
       ) : (
-        <div className="water-temp-grid">
-          {items.slice(0, 8).map((item, index) => (
-            <article
-              className={`water-card ${getTempClass(item.temperature)}`}
-              key={index}
-            >
-              <strong>{item.station}</strong>
-
-              <span>{item.temperature}°C</span>
-
-              <small>
-                {item.layer} · {item.time}
-              </small>
-            </article>
-          ))}
+        <div className="water-layer-grid">
+          <WaterLayerCard title="표층" data={surface} />
+          <WaterLayerCard title="중층" data={middle} />
+          <WaterLayerCard title="저층" data={bottom} />
         </div>
       )}
 
@@ -1280,5 +1300,21 @@ function WaterTemperaturePanel() {
         ※ 국립수산과학원 실시간 어장정보 OpenAPI 기반
       </p>
     </section>
+  );
+}
+
+function WaterLayerCard({ title, data }) {
+  return (
+    <article className="water-card">
+      <strong>{title}</strong>
+
+      <span>{data?.temperature ? `${data.temperature}°C` : "-"}</span>
+
+      <small>
+        {data
+          ? `${data.station} · ${data.date} ${data.time}`
+          : "측정 데이터 없음"}
+      </small>
+    </article>
   );
 }

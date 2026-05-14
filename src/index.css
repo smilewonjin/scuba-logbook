@@ -1146,3 +1146,20 @@ button:disabled {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.water-temp-selector {
+  margin-bottom: 22px;
+  max-width: 360px;
+}
+
+.water-layer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 768px) {
+  .water-layer-grid {
+    grid-template-columns: 1fr;
+  }
+}
