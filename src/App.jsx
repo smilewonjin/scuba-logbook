@@ -67,8 +67,12 @@ export default function App() {
   const [pageProfile, setPageProfile] = useState(null);
   const [isOwnerPage, setIsOwnerPage] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [equipmentChecklist, setEquipmentChecklist] = useState(defaultChecklist(equipmentItems));
-  const [planChecklist, setPlanChecklist] = useState(defaultChecklist(planItems));
+  const [equipmentChecklist, setEquipmentChecklist] = useState(
+    defaultChecklist(equipmentItems)
+  );
+  const [planChecklist, setPlanChecklist] = useState(
+    defaultChecklist(planItems)
+  );
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const [editingLog, setEditingLog] = useState(null);
@@ -77,6 +81,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [users, setUsers] = useState([]);
   const [feed, setFeed] = useState([]);
+  const [geo, setGeo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -85,6 +90,7 @@ export default function App() {
   const isUserPage = !!userPageMatch;
   const isMePage = currentPath === "/me";
   const isHomePage = currentPath === "/";
+  const isEmergencyPage = currentPath === "/emergency";
 
   const parseJsonObject = (value, fallback) => {
     try {
@@ -160,7 +166,19 @@ export default function App() {
     loadUsers();
     loadFeed();
 
-    if (isHomePage) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setGeo({
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+          });
+        },
+        () => setGeo(null)
+      );
+    }
+
+    if (isHomePage || isEmergencyPage) {
       setLogs([]);
     } else {
       loadLogs();
@@ -203,6 +221,18 @@ export default function App() {
     } else {
       setPlanChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
     }
+  };
+
+  const checkAllEquipment = () => {
+    setEquipmentChecklist(
+      Object.fromEntries(equipmentItems.map(([key]) => [key, true]))
+    );
+  };
+
+  const uncheckAllEquipment = () => {
+    setEquipmentChecklist(
+      Object.fromEntries(equipmentItems.map(([key]) => [key, false]))
+    );
   };
 
   const handlePhotoChange = (event) => {
@@ -249,8 +279,12 @@ export default function App() {
       memo: log.memo || "",
     });
 
-    setEquipmentChecklist(parseJsonObject(log.equipmentChecklist, defaultChecklist(equipmentItems)));
-    setPlanChecklist(parseJsonObject(log.planChecklist, defaultChecklist(planItems)));
+    setEquipmentChecklist(
+      parseJsonObject(log.equipmentChecklist, defaultChecklist(equipmentItems))
+    );
+    setPlanChecklist(
+      parseJsonObject(log.planChecklist, defaultChecklist(planItems))
+    );
     setPhoto(null);
     setPhotoPreview(log.photoUrl || "");
     setKeepExistingPhoto(true);
@@ -267,7 +301,7 @@ export default function App() {
     await loadUsers();
     await loadFeed();
 
-    if (!isHomePage) {
+    if (!isHomePage && !isEmergencyPage) {
       await loadLogs();
     }
   };
@@ -303,7 +337,10 @@ export default function App() {
       }
 
       if (editingLog) {
-        formData.append("keepExistingPhoto", keepExistingPhoto ? "true" : "false");
+        formData.append(
+          "keepExistingPhoto",
+          keepExistingPhoto ? "true" : "false"
+        );
 
         const response = await fetch(`/api/logs/${editingLog.rowKey}`, {
           method: "PUT",
@@ -367,12 +404,23 @@ export default function App() {
     ? `${pageProfile?.displayName || userPageMatch?.[1] || ""} 로그북`
     : isMePage
     ? "내 다이빙 로그북"
-    : "공개 다이빙 로그북";
+    : "Dive Community";
 
   const listLogs = isHomePage ? feed : logs;
 
+  if (isEmergencyPage) {
+    return (
+      <main className="page">
+        <TopNav me={me} />
+        <EmergencyPage />
+      </main>
+    );
+  }
+
   return (
     <main className="page">
+      <TopNav me={me} />
+
       <section className="hero-simple">
         <p className="eyebrow">SCUBA DIVING LOGBOOK</p>
         <h1>{pageTitle}</h1>
@@ -386,7 +434,6 @@ export default function App() {
               <span>{me.user?.userEmail} 로그인됨</span>
               <a className="small-button" href="/me">내 로그북</a>
               {me.myUrl && <a className="small-button" href={me.myUrl}>내 공개 페이지</a>}
-              <a className="small-button" href="/.auth/logout">로그아웃</a>
             </>
           ) : (
             <>
@@ -396,7 +443,7 @@ export default function App() {
           )}
         </div>
 
-        {canManage && (
+        {!isHomePage && canManage && (
           <button type="button" className="main-action" onClick={openNewForm}>
             새 로그 기록 만들기
           </button>
@@ -404,26 +451,152 @@ export default function App() {
       </section>
 
       {isHomePage && (
-        <section className="panel">
-          <div className="section-title">
-            <p>RECOMMENDED DIVERS</p>
-            <h2>추천 로그북</h2>
-          </div>
-
-          {users.length === 0 ? (
-            <div className="empty-state">공개된 사용자가 없습니다.</div>
-          ) : (
-            <div className="user-grid">
-              {users.map((user) => (
-                <a className="user-card" key={user.slug} href={`/u/${user.slug}`}>
-                  <strong>{user.displayName || user.slug}</strong>
-                  <span>/u/{user.slug}</span>
-                  {user.bio && <small>{user.bio}</small>}
-                </a>
-              ))}
+        <>
+          <section className="community-hero">
+            <div className="community-copy">
+              <p className="eyebrow">DIVE COMMUNITY</p>
+              <h2>오늘의 다이빙을 준비하세요</h2>
+              <p>
+                날씨, 바다 수온, 응급 절차, 반복다이빙 표를 확인하고
+                다른 다이버들의 공개 로그북을 둘러볼 수 있습니다.
+              </p>
             </div>
-          )}
-        </section>
+
+            <div className="community-map">
+              {geo ? (
+                <iframe
+                  title="현재 위치 지도"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${geo.lon - 0.8},${geo.lat - 0.8},${geo.lon + 0.8},${geo.lat + 0.8}&layer=mapnik&marker=${geo.lat},${geo.lon}`}
+                />
+              ) : (
+                <div className="map-placeholder">
+                  <strong>위치 권한을 허용하면</strong>
+                  <span>현재 위치 기반 지도가 표시됩니다.</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="quick-links">
+            <a className="quick-card primary-card" href="/me">
+              <strong>내 로그북</strong>
+              <span>로그인 후 내 다이빙 기록 관리</span>
+            </a>
+
+            <a className="quick-card" href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noreferrer">
+              <strong>날씨</strong>
+              <span>기상청 날씨 확인</span>
+            </a>
+
+            <a className="quick-card" href="/emergency">
+              <strong>응급 절차</strong>
+              <span>다이빙 응급상황 대응 가이드</span>
+            </a>
+
+            <a className="quick-card" href="https://www.nifs.go.kr/risa/main.do" target="_blank" rel="noreferrer">
+              <strong>바다 수온</strong>
+              <span>국립수산과학원 수온 정보</span>
+            </a>
+          </section>
+
+          <section id="dive-tables" className="panel">
+            <div className="section-title">
+              <p>DIVE TABLES</p>
+              <h2>반복다이빙 계획표</h2>
+            </div>
+
+            <div className="dive-process">
+              <div>
+                <strong>1</strong>
+                <span>최초 잠수</span>
+                <p>최대수심 + 잠수시간으로 잠수그룹 결정</p>
+              </div>
+              <div>
+                <strong>2</strong>
+                <span>수면휴식</span>
+                <p>SIT에 따라 새로운 잠수그룹으로 재조정</p>
+              </div>
+              <div>
+                <strong>3</strong>
+                <span>재잠수 계획</span>
+                <p>RNT / AMDT 확인 후 실제 잠수시간 계획</p>
+              </div>
+            </div>
+
+            <div className="table-link-grid">
+              <a className="table-link-card" href="#first-dive-group">
+                <strong>표 1</strong>
+                <span>최초 잠수그룹 산정표</span>
+              </a>
+              <a className="table-link-card" href="#surface-interval">
+                <strong>표 2</strong>
+                <span>수면휴식 후 그룹 재조정표</span>
+              </a>
+              <a className="table-link-card" href="#rnt-amdt">
+                <strong>표 3</strong>
+                <span>재잠수 RNT / AMDT 표</span>
+              </a>
+            </div>
+
+            <p className="table-warning">
+              ※ 이 표는 기록/학습용 참고자료입니다. 실제 다이빙 계획은 교육기관 기준과 다이브컴퓨터를 우선하세요.
+            </p>
+          </section>
+
+          <section className="safety-strip">
+            <div>
+              <strong>계획된 다이빙</strong>
+              <span>다이빙 계획을 세우고 버디와 공유하세요.</span>
+            </div>
+
+            <div>
+              <strong>버디 시스템</strong>
+              <span>항상 버디와 함께 다이빙하세요.</span>
+            </div>
+
+            <div>
+              <strong>안전 정지</strong>
+              <span>5m에서 3~5분 안전정지를 하세요.</span>
+            </div>
+
+            <div>
+              <strong>천천히 상승</strong>
+              <span>분당 9m 이내로 천천히 상승하세요.</span>
+            </div>
+
+            <div>
+              <strong>수분 섭취</strong>
+              <span>충분한 수분 섭취로 감압병을 예방하세요.</span>
+            </div>
+
+            <div>
+              <strong>컨디션 체크</strong>
+              <span>건강한 상태에서만 다이빙하세요.</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="section-title">
+              <p>RECOMMENDED DIVERS</p>
+              <h2>추천 로그북</h2>
+            </div>
+
+
+            {users.length === 0 ? (
+              <div className="empty-state">공개된 사용자가 없습니다.</div>
+            ) : (
+              <div className="user-grid">
+                {users.map((user) => (
+                  <a className="user-card" key={user.slug} href={`/u/${user.slug}`}>
+                    <strong>{user.displayName || user.slug}</strong>
+                    <span>/u/{user.slug}</span>
+                    {user.bio && <small>{user.bio}</small>}
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
       )}
 
       <section className="panel">
@@ -614,6 +787,10 @@ export default function App() {
             </div>
 
             <h3 className="form-subtitle">장비 체크</h3>
+            <div className="check-toolbar">
+              <button type="button" className="small-button" onClick={checkAllEquipment}>장비 전체 체크</button>
+              <button type="button" className="small-button" onClick={uncheckAllEquipment}>장비 전체 해제</button>
+            </div>
             <CheckboxGrid items={equipmentItems} values={equipmentChecklist} onChange={(key) => handleChecklistChange("equipment", key)} />
 
             <h3 className="form-subtitle">다이빙 계획 체크</h3>
@@ -659,6 +836,191 @@ export default function App() {
 
       {message && !showForm && <p className="message">{message}</p>}
     </main>
+  );
+}
+
+function TopNav({ me }) {
+  return (
+    <section className="top-nav">
+      <a href="/" className="brand-logo">
+        <span>🤿</span>
+        <div>
+          <strong>SCUBA LOGBOOK</strong>
+          <small>DIVE COMMUNITY</small>
+        </div>
+      </a>
+
+      <div className="top-menu">
+        <a href="/">홈</a>
+        <a href="/me">내 로그북</a>
+        <a href="/emergency">응급 절차</a>
+        <a href="/#dive-tables">다이빙 표</a>
+      </div>
+
+      <div className="top-auth">
+        {me?.authenticated ? (
+          <>
+            <span>{me.user?.userEmail}</span>
+            <a className="small-button" href="/.auth/logout">로그아웃</a>
+          </>
+        ) : (
+          <a className="small-button" href="/.auth/login/google">로그인</a>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EmergencyPage() {
+  const emergencyItems = [
+    {
+      icon: "🫧",
+      title: "감압병 응급처치",
+      steps: [
+        "100% 산소 공급",
+        "수평 자세 유지",
+        "수분 공급 (의식이 있을 때)",
+        "즉시 의료기관 이송",
+        "다이빙 로그 준비",
+      ],
+    },
+    {
+      icon: "🛟",
+      title: "익수자 구조",
+      steps: [
+        "자신의 안전 먼저 확보",
+        "구조 장비 활용",
+        "수면으로 상승 (천천히)",
+        "BCD 팽창 및 웨이트 제거",
+        "CPR 준비 (필요시)",
+      ],
+    },
+    {
+      icon: "🆘",
+      title: "의식불명 다이버",
+      steps: [
+        "기도 확보",
+        "호흡 확인",
+        "맥박 확인",
+        "CPR 시작 (필요시)",
+        "응급 구조 요청",
+      ],
+    },
+    {
+      icon: "😰",
+      title: "과호흡/패닉",
+      steps: [
+        "다이버 진정시키기",
+        "눈 맞춤 유지",
+        "천천히 깊게 호흡 유도",
+        "안전한 곳으로 이동",
+        "버디와 함께 상승",
+      ],
+    },
+  ];
+
+  return (
+    <main className="emergency-page-light">
+      <section className="emergency-light-header">
+        <a href="/" className="emergency-back">← 홈으로</a>
+        <h1>다이빙 응급 가이드</h1>
+        <p>긴급 연락처와 상황별 응급처치 절차를 빠르게 확인하세요.</p>
+      </section>
+
+      <section className="emergency-light-section">
+        <h2>📞 긴급 연락처</h2>
+
+        <div className="emergency-contact-grid">
+          <EmergencyContactCard
+            icon="🚤"
+            title="해양경찰"
+            number="122"
+            desc="해상 긴급구조"
+          />
+
+          <EmergencyContactCard
+            icon="🚑"
+            title="응급의료센터"
+            number="119"
+            desc="의료 응급상황"
+          />
+
+          <EmergencyContactCard
+            icon="🏥"
+            title="가까운 병원"
+            number="1339"
+            desc="의료상담 및 병원안내"
+          />
+
+          <EmergencyContactCard
+            icon="☎️"
+            title="DAN 핫라인"
+            number="+82-10-4500-9113"
+            desc="다이빙 의학 상담"
+          />
+        </div>
+      </section>
+
+      <section className="emergency-light-section">
+        <h2>〽️ 응급처치 절차</h2>
+
+        <div className="emergency-list">
+          {emergencyItems.map((item) => (
+            <EmergencyItem
+              key={item.title}
+              icon={item.icon}
+              title={item.title}
+              steps={item.steps}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="emergency-light-warning">
+        <strong>주의</strong>
+        <p>
+          이 내용은 일반적인 참고용입니다. 실제 응급상황에서는 즉시 119/122에
+          신고하고 전문 구조 인력과 의료진의 지시를 따르세요.
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function EmergencyContactCard({ icon, title, number, desc }) {
+  return (
+    <article className="emergency-contact-card">
+      <span className="emergency-contact-icon">{icon}</span>
+      <div>
+        <h3>{title}</h3>
+        <strong>{number}</strong>
+        <p>{desc}</p>
+      </div>
+    </article>
+  );
+}
+
+function EmergencyItem({ icon, title, steps }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <article className="emergency-light-item">
+      <button type="button" onClick={() => setOpen(!open)}>
+        <span>
+          <b>{icon}</b>
+          {title}
+        </span>
+        <strong>{open ? "⌃" : "›"}</strong>
+      </button>
+
+      {open && (
+        <ol>
+          {steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      )}
+    </article>
   );
 }
 
