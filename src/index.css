@@ -1100,30 +1100,45 @@ button:disabled {
 }
 
 .water-card {
-  background: linear-gradient(180deg, #082f49, #0f172a);
-  border: 1px solid #0ea5e9;
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 24px;
   text-align: center;
+  border: 1px solid #334155;
+}
+
+.water-card.hot {
+  background: linear-gradient(180deg, #7f1d1d, #450a0a);
+}
+
+.water-card.good {
+  background: linear-gradient(180deg, #075985, #082f49);
+}
+
+.water-card.cool {
+  background: linear-gradient(180deg, #1e3a8a, #172554);
+}
+
+.water-card.cold {
+  background: linear-gradient(180deg, #312e81, #1e1b4b);
 }
 
 .water-card strong {
   display: block;
+  color: white;
   font-size: 22px;
   margin-bottom: 12px;
-  color: #e0f2fe;
 }
 
 .water-card span {
   display: block;
-  font-size: 34px;
+  font-size: 36px;
   font-weight: bold;
-  color: #38bdf8;
-  margin-bottom: 8px;
+  color: #f8fafc;
+  margin-bottom: 10px;
 }
 
 .water-card small {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 @media (max-width: 768px) {
