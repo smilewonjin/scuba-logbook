@@ -797,6 +797,11 @@ export default function App() {
       )}
 
       {message && !showForm && <p className="message">{message}</p>}
+
+      <footer className="footer">
+        © 2026 Grabits Dive Community. All rights reserved.
+      </footer>
+
     </main>
   );
 }
