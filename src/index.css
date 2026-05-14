@@ -1092,3 +1092,42 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+.water-temp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.water-card {
+  background: linear-gradient(180deg, #082f49, #0f172a);
+  border: 1px solid #0ea5e9;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+}
+
+.water-card strong {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 12px;
+  color: #e0f2fe;
+}
+
+.water-card span {
+  display: block;
+  font-size: 34px;
+  font-weight: bold;
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+
+.water-card small {
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .water-temp-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

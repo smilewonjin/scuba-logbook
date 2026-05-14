@@ -389,6 +389,41 @@ app.get("/api/logs", async (req, res) => {
   res.json({ logs, profile, authenticated: true });
 });
 
+app.get("/api/water-temp", async (req, res) => {
+  try {
+    const apiKey = process.env.NIFS_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        message: "NIFS_API_KEY is not configured",
+      });
+    }
+
+    const url =
+      `https://www.nifs.go.kr/OpenAPI_json?id=risaList&key=${apiKey}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        message: "Failed to load NIFS API",
+      });
+    }
+
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    console.error("GET /api/water-temp failed:", error);
+
+    res.status(500).json({
+      message: "Failed to load water temperature",
+      error: error.message,
+    });
+  }
+});
+
+
 app.post("/api/logs", upload.single("photo"), async (req, res) => {
   try {
     const user = requireLogin(req, res);

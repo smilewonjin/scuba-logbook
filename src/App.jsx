@@ -499,6 +499,8 @@ export default function App() {
             </a>
           </section>
 
+          <WaterTemperaturePanel />
+
           <section id="dive-tables" className="panel">
             <DivePlanner />
           </section>
@@ -1204,8 +1206,85 @@ function DivePlanner() {
       </div>
 
       <p className="table-warning">
-        ※ 이 계산기는 기록/학습용 참고 기능입니다. 실제 다이빙 계획은 본인 교육기관 표와 다이브컴퓨터를 우선하세요.
+        ※ 이 계산기는 NAUI 기준 다이빙표를 참고하였습니다. 이 내용은 기록/학습용 참고 기능입니다. 실제 다이빙 계획은 본인 교육기관 표와 다이브컴퓨터를 우선하세요.
       </p>
     </>
+  );
+}
+
+function WaterTemperaturePanel() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadWaterTemp = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch("/api/water-temp");
+      const data = await response.json();
+
+      const rows =
+        data?.response?.body?.items ||
+        data?.items ||
+        [];
+
+      setItems(rows);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWaterTemp();
+  }, []);
+
+  return (
+    <section className="panel">
+      <div className="section-title row-title">
+        <div>
+          <p>SEA TEMPERATURE</p>
+          <h2>실시간 바다 수온</h2>
+        </div>
+
+        <button className="small-button" onClick={loadWaterTemp}>
+          새로고침
+        </button>
+      </div>
+
+      {loading ? (
+        <p>수온 정보를 불러오는 중...</p>
+      ) : (
+        <div className="water-temp-grid">
+          {items.slice(0, 8).map((item, index) => (
+            <article className="water-card" key={index}>
+              <strong>
+                {item.obs_post_name ||
+                  item.gugun ||
+                  item.area ||
+                  "관측소"}
+              </strong>
+
+              <span>
+                {item.water_temp ||
+                  item.temp ||
+                  "-"}°C
+              </span>
+
+              <small>
+                {item.obs_time ||
+                  item.time ||
+                  ""}
+              </small>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <p className="table-warning">
+        ※ 국립수산과학원 OpenAPI 기반 실시간 수온 정보
+      </p>
+    </section>
   );
 }
