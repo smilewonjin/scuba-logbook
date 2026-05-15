@@ -1172,3 +1172,14 @@ button:disabled {
   font-size: 14px;
   border-top: 1px solid #1e293b;
 }
+
+.mini-location-btn {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #0ea5e9;
+  background: rgba(14, 165, 233, 0.08);
+  color: #e0f2fe;
+  cursor: pointer;
+  font-size: 13px;
+}

@@ -483,23 +483,17 @@ export default function App() {
               <span>로그인 후 내 다이빙 기록 관리</span>
             </a>
 
-            <a className="quick-card" href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noreferrer">
-              <strong>날씨</strong>
-              <span>기상청 날씨 확인</span>
-            </a>
+            <MiniWeatherCard geo={geo} />
+
+            <MiniWaterTempCard />
 
             <a className="quick-card" href="/emergency">
               <strong>응급 절차</strong>
               <span>다이빙 응급상황 대응 가이드</span>
             </a>
-
-            <a className="quick-card" href="https://www.nifs.go.kr/risa/main.do" target="_blank" rel="noreferrer">
-              <strong>바다 수온</strong>
-              <span>국립수산과학원 수온 정보</span>
-            </a>
           </section>
 
-          <WaterTemperaturePanel />
+          {/* <WaterTemperaturePanel /> */}
 
           <section id="dive-tables" className="panel">
             <DivePlanner />
@@ -1217,24 +1211,17 @@ function DivePlanner() {
   );
 }
 
-function WaterTemperaturePanel() {
+function MiniWaterTempCard() {
   const [items, setItems] = useState([]);
   const [selectedStation, setSelectedStation] = useState("강릉");
-  const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      setLoading(true);
-
       const response = await fetch("/api/water-temp");
       const data = await response.json();
-
       setItems(data || []);
-    } catch (error) {
-      console.error(error);
+    } catch {
       setItems([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1255,71 +1242,126 @@ function WaterTemperaturePanel() {
   const bottom = selectedItems.find((item) => item.layer === "저층");
 
   return (
-    <section className="panel">
-      <div className="section-title row-title">
-        <div>
-          <p>SEA TEMPERATURE</p>
-          <h2>실시간 바다 수온</h2>
-        </div>
+    <div className="quick-card mini-live-card">
+      <strong>실시간 수온</strong>
 
-        <button className="small-button" onClick={loadData}>
-          새로고침
-        </button>
+      <select
+        className="mini-select"
+        value={selectedStation}
+        onChange={(e) => setSelectedStation(e.target.value)}
+      >
+        {stations.includes("강릉") && <option value="강릉">강릉</option>}
+
+        {stations
+          .filter((station) => station !== "강릉")
+          .map((station) => (
+            <option key={station} value={station}>
+              {station}
+            </option>
+          ))}
+      </select>
+
+      <div className="mini-live-list">
+        <span>🌊 표층 {surface?.temperature ? `${surface.temperature}°C` : "-"}</span>
+        <span>🫧 중층 {middle?.temperature ? `${middle.temperature}°C` : "-"}</span>
+        <span>⚓ 저층 {bottom?.temperature ? `${bottom.temperature}°C` : "-"}</span>
       </div>
-
-      <div className="water-temp-selector">
-        <label>
-          관측소 선택
-          <select
-            value={selectedStation}
-            onChange={(e) => setSelectedStation(e.target.value)}
-          >
-            {stations.includes("강릉") && <option value="강릉">강릉</option>}
-
-            {stations
-              .filter((station) => station !== "강릉")
-              .map((station) => (
-                <option key={station} value={station}>
-                  {station}
-                </option>
-              ))}
-          </select>
-        </label>
-      </div>
-
-      {loading ? (
-        <p>수온 정보를 불러오는 중...</p>
-      ) : selectedItems.length === 0 ? (
-        <div className="empty-state">
-          선택한 관측소의 수온 정보가 없습니다.
-        </div>
-      ) : (
-        <div className="water-layer-grid">
-          <WaterLayerCard title="표층" data={surface} />
-          <WaterLayerCard title="중층" data={middle} />
-          <WaterLayerCard title="저층" data={bottom} />
-        </div>
-      )}
-
-      <p className="table-warning">
-        ※ 국립수산과학원 실시간 어장정보 OpenAPI 기반
-      </p>
-    </section>
+    </div>
   );
 }
 
-function WaterLayerCard({ title, data }) {
+function MiniWeatherCard({ geo }) {
+  const [weather, setWeather] = useState(null);
+
+  const LOCATIONS = {
+    강릉: { lat: 37.7519, lon: 128.8761 },
+    속초: { lat: 38.2070, lon: 128.5918 },
+    양양: { lat: 38.0754, lon: 128.6189 },
+    부산: { lat: 35.1796, lon: 129.0756 },
+    제주: { lat: 33.4996, lon: 126.5312 },
+    울릉도: { lat: 37.4844, lon: 130.9057 },
+  };
+
+  const [selectedLocation, setSelectedLocation] = useState("강릉");
+
+  const loadWeather = async (lat, lon) => {
+    try {
+      const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code` +
+        `&timezone=Asia%2FSeoul`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      setWeather(data.current || null);
+    } catch {
+      setWeather(null);
+    }
+  };
+
+  useEffect(() => {
+    const loc = LOCATIONS[selectedLocation];
+
+    if (loc) {
+      loadWeather(loc.lat, loc.lon);
+    }
+  }, [selectedLocation]);
+
+  const weatherIcon = (code) => {
+    if ([0, 1].includes(code)) return "☀️";
+    if ([2, 3].includes(code)) return "⛅";
+    if ([45, 48].includes(code)) return "🌫️";
+    if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
+    if ([71, 73, 75].includes(code)) return "❄️";
+    if ([95, 96, 99].includes(code)) return "⛈️";
+    return "🌤️";
+  };
+
   return (
-    <article className="water-card">
-      <strong>{title}</strong>
+    <div className="quick-card mini-live-card">
+      <strong>오늘 날씨</strong>
 
-      <span>{data?.temperature ? `${data.temperature}°C` : "-"}</span>
+      <select
+        className="mini-select"
+        value={selectedLocation}
+        onChange={(e) => setSelectedLocation(e.target.value)}
+      >
+        {Object.keys(LOCATIONS).map((loc) => (
+          <option key={loc} value={loc}>
+            {loc}
+          </option>
+        ))}
+      </select>
 
-      <small>
-        {data
-          ? `${data.station} · ${data.date} ${data.time}`
-          : "측정 데이터 없음"}
-      </small>
-    </article>
+      {geo && (
+        <button
+          className="mini-location-btn"
+          type="button"
+          onClick={() => {
+            loadWeather(geo.lat, geo.lon);
+          }}
+        >
+          📍 현재 위치 사용
+        </button>
+      )}
+
+      {weather ? (
+        <div className="mini-weather-main">
+          <b>{weatherIcon(weather.weather_code)}</b>
+
+          <em>{weather.temperature_2m}°C</em>
+
+          <small>
+            💨 {weather.wind_speed_10m}m/s · 💧{" "}
+            {weather.relative_humidity_2m}%
+          </small>
+        </div>
+      ) : (
+        <div className="mini-live-list">
+          <span>날씨 정보를 불러오는 중...</span>
+        </div>
+      )}
+    </div>
   );
 }
