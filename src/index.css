@@ -1197,3 +1197,37 @@ button:disabled {
   margin-top: 10px;
   font-size: 12px;
 }
+
+.mini-water-layers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mini-water-layers div {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.mini-water-layers b {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.mini-water-layers span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.mini-water-layers strong {
+  display: block;
+  color: #38bdf8;
+  font-size: 16px;
+}

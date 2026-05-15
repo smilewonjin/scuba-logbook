@@ -1223,25 +1223,36 @@ const REGION_GROUPS = {
     강릉: { lat: 37.7519, lon: 128.8761, stationKeyword: "강릉" },
     동해: { lat: 37.5247, lon: 129.1143, stationKeyword: "동해" },
     삼척: { lat: 37.4499, lon: 129.1652, stationKeyword: "삼척" },
+    울진: { lat: 36.9931, lon: 129.4005, stationKeyword: "울진" },
+    영덕: { lat: 36.4151, lon: 129.3650, stationKeyword: "영덕" },
+    포항: { lat: 36.0190, lon: 129.3435, stationKeyword: "포항" },
+    경주: { lat: 35.8562, lon: 129.2247, stationKeyword: "경주" },
   },
   남해: {
+    기장: { lat: 35.2446, lon: 129.2222, stationKeyword: "기장" },
     부산: { lat: 35.1796, lon: 129.0756, stationKeyword: "부산" },
     거제: { lat: 34.8806, lon: 128.6211, stationKeyword: "거제" },
     통영: { lat: 34.8544, lon: 128.4332, stationKeyword: "통영" },
-    여수: { lat: 34.7604, lon: 127.6622, stationKeyword: "여수" },
     남해: { lat: 34.8377, lon: 127.8925, stationKeyword: "남해" },
+    여수: { lat: 34.7604, lon: 127.6622, stationKeyword: "여수" },
+    완도: { lat: 34.3110, lon: 126.7550, stationKeyword: "완도" },
   },
   서해: {
     인천: { lat: 37.4563, lon: 126.7052, stationKeyword: "인천" },
     태안: { lat: 36.7457, lon: 126.2978, stationKeyword: "태안" },
     보령: { lat: 36.3335, lon: 126.6127, stationKeyword: "보령" },
     군산: { lat: 35.9676, lon: 126.7369, stationKeyword: "군산" },
+    목포: { lat: 34.8118, lon: 126.3922, stationKeyword: "목포" },
   },
   제주도: {
     제주시: { lat: 33.4996, lon: 126.5312, stationKeyword: "제주" },
     서귀포: { lat: 33.2541, lon: 126.5601, stationKeyword: "서귀포" },
     성산: { lat: 33.4589, lon: 126.9425, stationKeyword: "성산" },
     우도: { lat: 33.5065, lon: 126.9559, stationKeyword: "우도" },
+  },
+  도서: {
+    울릉도: { lat: 37.4844, lon: 130.9057, stationKeyword: "울릉" },
+    독도: { lat: 37.2419, lon: 131.8644, stationKeyword: "독도" },
   },
 };
 
@@ -1286,10 +1297,24 @@ function MiniWaterTempCard({ selectedRegion }) {
       <strong>실시간 수온</strong>
       <span className="mini-region-label">{selectedRegion}</span>
 
-      <div className="mini-live-list">
-        <span>🌊 표층 {surface?.temperature ? `${surface.temperature}°C` : "-"}</span>
-        <span>🫧 중층 {middle?.temperature ? `${middle.temperature}°C` : "-"}</span>
-        <span>⚓ 저층 {bottom?.temperature ? `${bottom.temperature}°C` : "-"}</span>
+      <div className="mini-water-layers">
+        <div>
+          <b>🌊</b>
+          <span>표층</span>
+          <strong>{surface?.temperature ? `${surface.temperature}°C` : "-"}</strong>
+        </div>
+
+        <div>
+          <b>🫧</b>
+          <span>중층</span>
+          <strong>{middle?.temperature ? `${middle.temperature}°C` : "-"}</strong>
+        </div>
+
+        <div>
+          <b>🪸</b>
+          <span>저층</span>
+          <strong>{bottom?.temperature ? `${bottom.temperature}°C` : "-"}</strong>
+        </div>
       </div>
 
       <small className="mini-help-text">
