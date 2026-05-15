@@ -84,6 +84,7 @@ export default function App() {
   const [geo, setGeo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("강릉");
 
   const currentPath = window.location.pathname;
   const userPageMatch = currentPath.match(/^\/u\/([^/]+)$/);
@@ -483,9 +484,12 @@ export default function App() {
               <span>로그인 후 내 다이빙 기록 관리</span>
             </a>
 
-            <MiniWeatherCard geo={geo} />
+            <MiniWeatherCard
+              selectedRegion={selectedRegion}
+              setSelectedRegion={setSelectedRegion}
+            />
 
-            <MiniWaterTempCard />
+            <MiniWaterTempCard selectedRegion={selectedRegion} />
 
             <a className="quick-card" href="/emergency">
               <strong>응급 절차</strong>
@@ -1211,9 +1215,46 @@ function DivePlanner() {
   );
 }
 
-function MiniWaterTempCard() {
+const REGION_GROUPS = {
+  동해: {
+    고성: { lat: 38.3806, lon: 128.4676, stationKeyword: "고성" },
+    속초: { lat: 38.2070, lon: 128.5918, stationKeyword: "속초" },
+    양양: { lat: 38.0754, lon: 128.6189, stationKeyword: "양양" },
+    강릉: { lat: 37.7519, lon: 128.8761, stationKeyword: "강릉" },
+    동해: { lat: 37.5247, lon: 129.1143, stationKeyword: "동해" },
+    삼척: { lat: 37.4499, lon: 129.1652, stationKeyword: "삼척" },
+  },
+  남해: {
+    부산: { lat: 35.1796, lon: 129.0756, stationKeyword: "부산" },
+    거제: { lat: 34.8806, lon: 128.6211, stationKeyword: "거제" },
+    통영: { lat: 34.8544, lon: 128.4332, stationKeyword: "통영" },
+    여수: { lat: 34.7604, lon: 127.6622, stationKeyword: "여수" },
+    남해: { lat: 34.8377, lon: 127.8925, stationKeyword: "남해" },
+  },
+  서해: {
+    인천: { lat: 37.4563, lon: 126.7052, stationKeyword: "인천" },
+    태안: { lat: 36.7457, lon: 126.2978, stationKeyword: "태안" },
+    보령: { lat: 36.3335, lon: 126.6127, stationKeyword: "보령" },
+    군산: { lat: 35.9676, lon: 126.7369, stationKeyword: "군산" },
+  },
+  제주도: {
+    제주시: { lat: 33.4996, lon: 126.5312, stationKeyword: "제주" },
+    서귀포: { lat: 33.2541, lon: 126.5601, stationKeyword: "서귀포" },
+    성산: { lat: 33.4589, lon: 126.9425, stationKeyword: "성산" },
+    우도: { lat: 33.5065, lon: 126.9559, stationKeyword: "우도" },
+  },
+};
+
+function getRegionInfo(region) {
+  for (const group of Object.values(REGION_GROUPS)) {
+    if (group[region]) return group[region];
+  }
+
+  return REGION_GROUPS.동해.강릉;
+}
+
+function MiniWaterTempCard({ selectedRegion }) {
   const [items, setItems] = useState([]);
-  const [selectedStation, setSelectedStation] = useState("강릉");
 
   const loadData = async () => {
     try {
@@ -1229,12 +1270,11 @@ function MiniWaterTempCard() {
     loadData();
   }, []);
 
-  const stations = Array.from(
-    new Set(items.map((item) => item.station).filter(Boolean))
-  ).sort();
+  const regionInfo = getRegionInfo(selectedRegion);
+  const keyword = regionInfo.stationKeyword || selectedRegion;
 
   const selectedItems = items.filter((item) =>
-    item.station?.includes(selectedStation)
+    item.station?.includes(keyword)
   );
 
   const surface = selectedItems.find((item) => item.layer === "표층");
@@ -1244,45 +1284,23 @@ function MiniWaterTempCard() {
   return (
     <div className="quick-card mini-live-card">
       <strong>실시간 수온</strong>
-
-      <select
-        className="mini-select"
-        value={selectedStation}
-        onChange={(e) => setSelectedStation(e.target.value)}
-      >
-        {stations.includes("강릉") && <option value="강릉">강릉</option>}
-
-        {stations
-          .filter((station) => station !== "강릉")
-          .map((station) => (
-            <option key={station} value={station}>
-              {station}
-            </option>
-          ))}
-      </select>
+      <span className="mini-region-label">{selectedRegion}</span>
 
       <div className="mini-live-list">
         <span>🌊 표층 {surface?.temperature ? `${surface.temperature}°C` : "-"}</span>
         <span>🫧 중층 {middle?.temperature ? `${middle.temperature}°C` : "-"}</span>
         <span>⚓ 저층 {bottom?.temperature ? `${bottom.temperature}°C` : "-"}</span>
       </div>
+
+      <small className="mini-help-text">
+        {selectedItems[0]?.station || "해당 지역 관측소 없음"}
+      </small>
     </div>
   );
 }
 
-function MiniWeatherCard({ geo }) {
+function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
   const [weather, setWeather] = useState(null);
-
-  const LOCATIONS = {
-    강릉: { lat: 37.7519, lon: 128.8761 },
-    속초: { lat: 38.2070, lon: 128.5918 },
-    양양: { lat: 38.0754, lon: 128.6189 },
-    부산: { lat: 35.1796, lon: 129.0756 },
-    제주: { lat: 33.4996, lon: 126.5312 },
-    울릉도: { lat: 37.4844, lon: 130.9057 },
-  };
-
-  const [selectedLocation, setSelectedLocation] = useState("강릉");
 
   const loadWeather = async (lat, lon) => {
     try {
@@ -1301,12 +1319,9 @@ function MiniWeatherCard({ geo }) {
   };
 
   useEffect(() => {
-    const loc = LOCATIONS[selectedLocation];
-
-    if (loc) {
-      loadWeather(loc.lat, loc.lon);
-    }
-  }, [selectedLocation]);
+    const loc = getRegionInfo(selectedRegion);
+    loadWeather(loc.lat, loc.lon);
+  }, [selectedRegion]);
 
   const weatherIcon = (code) => {
     if ([0, 1].includes(code)) return "☀️";
@@ -1324,37 +1339,26 @@ function MiniWeatherCard({ geo }) {
 
       <select
         className="mini-select"
-        value={selectedLocation}
-        onChange={(e) => setSelectedLocation(e.target.value)}
+        value={selectedRegion}
+        onChange={(e) => setSelectedRegion(e.target.value)}
       >
-        {Object.keys(LOCATIONS).map((loc) => (
-          <option key={loc} value={loc}>
-            {loc}
-          </option>
+        {Object.entries(REGION_GROUPS).map(([groupName, regions]) => (
+          <optgroup label={groupName} key={groupName}>
+            {Object.keys(regions).map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
-
-      {geo && (
-        <button
-          className="mini-location-btn"
-          type="button"
-          onClick={() => {
-            loadWeather(geo.lat, geo.lon);
-          }}
-        >
-          📍 현재 위치 사용
-        </button>
-      )}
 
       {weather ? (
         <div className="mini-weather-main">
           <b>{weatherIcon(weather.weather_code)}</b>
-
           <em>{weather.temperature_2m}°C</em>
-
           <small>
-            💨 {weather.wind_speed_10m}m/s · 💧{" "}
-            {weather.relative_humidity_2m}%
+            💨 {weather.wind_speed_10m}m/s · 💧 {weather.relative_humidity_2m}%
           </small>
         </div>
       ) : (
