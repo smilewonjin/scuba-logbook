@@ -1134,10 +1134,16 @@ function DivePlanner() {
   const [sit, setSit] = useState("60");
 
   const result = calculateDivePlan(depth, bottomTime, sit);
+
   const rntRows = result.adjustedGroup
     ? DEPTHS.map((d) => {
         const data = RNT_AMDT_TABLE[result.adjustedGroup]?.[d];
-        return { depth: d, rnt: data?.[0] ?? "-", amdt: data?.[1] ?? "-" };
+
+        return {
+          depth: d,
+          rnt: data?.[0] ?? "-",
+          amdt: data?.[1] ?? "-",
+        };
       })
     : [];
 
@@ -1148,17 +1154,18 @@ function DivePlanner() {
         <h2>반복다이빙 자동 계산</h2>
       </div>
 
-      <div className="planner-grid">
+      <div className="planner-compact">
+
         <div className="planner-inline-row">
           <label>최초 잠수</label>
 
           <select
-            value={firstDepth}
-            onChange={(e) => setFirstDepth(Number(e.target.value))}
+            value={depth}
+            onChange={(e) => setDepth(e.target.value)}
           >
-            {DEPTHS.map((depth) => (
-              <option key={depth} value={depth}>
-                {depth}m
+            {DEPTHS.map((d) => (
+              <option key={d} value={d}>
+                {d}m
               </option>
             ))}
           </select>
@@ -1166,12 +1173,12 @@ function DivePlanner() {
           <input
             type="number"
             value={bottomTime}
-            onChange={(e) => setBottomTime(Number(e.target.value))}
-            placeholder="분"
+            onChange={(e) => setBottomTime(e.target.value)}
+            placeholder="잠수시간"
           />
 
           <div className="planner-result-chip">
-            최초그룹 <strong>{firstGroup || "-"}</strong>
+            최초그룹 <strong>{result.firstGroup || "-"}</strong>
           </div>
         </div>
 
@@ -1180,26 +1187,16 @@ function DivePlanner() {
 
           <input
             type="number"
-            value={surfaceInterval}
-            onChange={(e) => setSurfaceInterval(Number(e.target.value))}
-            placeholder="휴식 분"
+            value={sit}
+            onChange={(e) => setSit(e.target.value)}
+            placeholder="휴식시간"
           />
 
           <div className="planner-result-chip">
-            조정그룹 <strong>{adjustedGroup || "-"}</strong>
+            조정그룹 <strong>{result.adjustedGroup || "-"}</strong>
           </div>
         </div>
 
-        <div className="planner-step">
-          <strong>3</strong>
-          <h3>결과</h3>
-          <p>
-            입력 수심은 표 기준에 맞춰 <b>{result.roundedDepth || "-"}m</b>로 계산됩니다.
-          </p>
-          <p>
-            예: 18m / 30분 / SIT 60분 → F 그룹 → E 그룹
-          </p>
-        </div>
       </div>
 
       <div className="table-wrapper">
@@ -1213,11 +1210,11 @@ function DivePlanner() {
           </thead>
 
           <tbody>
-            {Object.entries(rntTable || {}).map(([depth, values]) => (
-              <tr key={depth}>
-                <td>{depth}m</td>
-                <td>{values[0]}</td>
-                <td>{values[1]}</td>
+            {rntRows.map((row) => (
+              <tr key={row.depth}>
+                <td>{row.depth}m</td>
+                <td>{row.rnt}</td>
+                <td>{row.amdt}</td>
               </tr>
             ))}
           </tbody>
@@ -1225,7 +1222,7 @@ function DivePlanner() {
       </div>
 
       <p className="table-warning">
-        ※ 이 계산기는 NAUI 기준 다이빙표를 참고하였습니다. 이 내용은 기록/학습용 참고 기능입니다. 실제 다이빙 계획은 본인 교육기관 표와 다이브컴퓨터를 우선하세요.
+        ※ NAUI 기준 반복다이빙표 참고용입니다.
       </p>
     </>
   );
