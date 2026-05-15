@@ -480,6 +480,7 @@ export default function App() {
 
           <section className="quick-links">
             <a className="quick-card primary-card" href="/me">
+              <div className="quick-icon">📘</div>
               <strong>내 로그북</strong>
               <span>로그인 후 내 다이빙 기록 관리</span>
             </a>
@@ -492,6 +493,7 @@ export default function App() {
             <MiniWaterTempCard selectedRegion={selectedRegion} />
 
             <a className="quick-card" href="/emergency">
+              <div className="quick-icon">🚨</div>
               <strong>응급 절차</strong>
               <span>다이빙 응급상황 대응 가이드</span>
             </a>
@@ -1294,7 +1296,10 @@ function MiniWaterTempCard({ selectedRegion }) {
 
   return (
     <div className="quick-card mini-live-card">
-      <strong>실시간 수온</strong>
+      <div className="quick-title-row">
+        <div className="quick-icon">🌡️</div>
+        <strong>실시간 수온</strong>
+      </div>
       <span className="mini-region-label">{selectedRegion}</span>
 
       <div className="mini-water-layers">
@@ -1360,7 +1365,10 @@ function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
 
   return (
     <div className="quick-card mini-live-card">
-      <strong>오늘 날씨</strong>
+      <div className="quick-title-row">
+        <div className="quick-icon">🌤️</div>
+        <strong>오늘 날씨</strong>
+      </div>
 
       <select
         className="mini-select"

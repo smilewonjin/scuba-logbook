@@ -1231,3 +1231,20 @@ button:disabled {
   color: #38bdf8;
   font-size: 16px;
 }
+
+.quick-icon {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.quick-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.quick-title-row .quick-icon {
+  font-size: 26px;
+  margin-bottom: 0;
+}
