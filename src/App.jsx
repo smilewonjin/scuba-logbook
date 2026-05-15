@@ -1387,12 +1387,24 @@ function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
       </select>
 
       {weather ? (
-        <div className="mini-weather-main">
-          <b>{weatherIcon(weather.weather_code)}</b>
-          <em>{weather.temperature_2m}°C</em>
-          <small>
-            💨 {weather.wind_speed_10m}m/s · 💧 {weather.relative_humidity_2m}%
-          </small>
+        <div className="mini-weather-grid">
+          <div>
+            <b>{weatherIcon(weather.weather_code)}</b>
+            <span>날씨</span>
+            <strong>{weather.temperature_2m}°C</strong>
+          </div>
+
+          <div>
+            <b>💨</b>
+            <span>풍속</span>
+            <strong>{weather.wind_speed_10m}m/s</strong>
+          </div>
+
+          <div>
+            <b>💧</b>
+            <span>습도</span>
+            <strong>{weather.relative_humidity_2m}%</strong>
+          </div>
         </div>
       ) : (
         <div className="mini-live-list">
