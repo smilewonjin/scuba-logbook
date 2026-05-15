@@ -1149,31 +1149,44 @@ function DivePlanner() {
       </div>
 
       <div className="planner-grid">
-        <div className="planner-step">
-          <strong>1</strong>
-          <h3>최초 잠수</h3>
-          <label>
-            최대수심(m)
-            <input value={depth} onChange={(e) => setDepth(e.target.value)} />
-          </label>
-          <label>
-            잠수시간(min)
-            <input value={bottomTime} onChange={(e) => setBottomTime(e.target.value)} />
-          </label>
-          <div className="planner-result">
-            최초그룹 <b>{result.firstGroup || "-"}</b>
+        <div className="planner-inline-row">
+          <label>최초 잠수</label>
+
+          <select
+            value={firstDepth}
+            onChange={(e) => setFirstDepth(Number(e.target.value))}
+          >
+            {DEPTHS.map((depth) => (
+              <option key={depth} value={depth}>
+                {depth}m
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            value={bottomTime}
+            onChange={(e) => setBottomTime(Number(e.target.value))}
+            placeholder="분"
+          />
+
+          <div className="planner-result-chip">
+            최초그룹 <strong>{firstGroup || "-"}</strong>
           </div>
         </div>
 
-        <div className="planner-step">
-          <strong>2</strong>
-          <h3>수면 휴식</h3>
-          <label>
-            수면휴식 시간(min)
-            <input value={sit} onChange={(e) => setSit(e.target.value)} />
-          </label>
-          <div className="planner-result">
-            조정그룹 <b>{result.adjustedGroup || "-"}</b>
+        <div className="planner-inline-row">
+          <label>수면 휴식</label>
+
+          <input
+            type="number"
+            value={surfaceInterval}
+            onChange={(e) => setSurfaceInterval(Number(e.target.value))}
+            placeholder="휴식 분"
+          />
+
+          <div className="planner-result-chip">
+            조정그룹 <strong>{adjustedGroup || "-"}</strong>
           </div>
         </div>
 
@@ -1190,20 +1203,21 @@ function DivePlanner() {
       </div>
 
       <div className="table-wrapper">
-        <table className="dive-table">
+        <table className="planner-result-table compact">
           <thead>
             <tr>
-              <th>재잠수 수심</th>
-              <th>잔류질소 RNT</th>
-              <th>조정 최대잠수시간 AMDT</th>
+              <th>수심</th>
+              <th>RNT</th>
+              <th>AMDT</th>
             </tr>
           </thead>
+
           <tbody>
-            {rntRows.map((row) => (
-              <tr key={row.depth}>
-                <td>{row.depth}m</td>
-                <td>{row.rnt}분</td>
-                <td>{row.amdt}분</td>
+            {Object.entries(rntTable || {}).map(([depth, values]) => (
+              <tr key={depth}>
+                <td>{depth}m</td>
+                <td>{values[0]}</td>
+                <td>{values[1]}</td>
               </tr>
             ))}
           </tbody>

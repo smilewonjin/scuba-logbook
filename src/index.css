@@ -1282,3 +1282,50 @@ button:disabled {
   color: #f8fafc;
   font-size: 15px;
 }
+
+.planner-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.planner-inline-row label {
+  min-width: 90px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.planner-inline-row select,
+.planner-inline-row input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+}
+
+.planner-result-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid #0ea5e9;
+  color: #bae6fd;
+  font-size: 14px;
+}
+
+.planner-result-chip strong {
+  color: white;
+  margin-left: 6px;
+}
+
+.planner-result-table.compact {
+  margin-top: 18px;
+  font-size: 13px;
+}
+
+.planner-result-table.compact th,
+.planner-result-table.compact td {
+  padding: 8px 10px;
+}
