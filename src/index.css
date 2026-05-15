@@ -1320,16 +1320,6 @@ button:disabled {
   margin-left: 6px;
 }
 
-.planner-result-table.compact {
-  margin-top: 18px;
-  font-size: 13px;
-}
-
-.planner-result-table.compact th,
-.planner-result-table.compact td {
-  padding: 8px 10px;
-}
-
 .planner-compact {
   display: flex;
   flex-direction: column;
@@ -1370,7 +1360,47 @@ button:disabled {
   font-size: 13px;
 }
 
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #00111f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.planner-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.planner-input-row label {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .planner-result-table.compact th,
 .planner-result-table.compact td {
-  padding: 8px 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.planner-inline-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.planner-inline-input label {
+  white-space: nowrap;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
 }

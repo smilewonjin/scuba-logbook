@@ -1155,74 +1155,101 @@ function DivePlanner() {
       </div>
 
       <div className="planner-compact">
+        <div className="planner-step-card">
+          <div className="planner-step-header">
+            <span className="step-badge">STEP 1</span>
+            <strong>최초 잠수</strong>
+          </div>
 
-        <div className="planner-inline-row">
-          <label>최초 잠수</label>
+          <div className="planner-input-row">
+            <div className="planner-inline-input">
+              <label>Depth (m)</label>
 
-          <select
-            value={depth}
-            onChange={(e) => setDepth(e.target.value)}
-          >
-            {DEPTHS.map((d) => (
-              <option key={d} value={d}>
-                {d}m
-              </option>
-            ))}
-          </select>
+              <select
+                value={depth}
+                onChange={(e) => setDepth(e.target.value)}
+              >
+                {DEPTHS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <input
-            type="number"
-            value={bottomTime}
-            onChange={(e) => setBottomTime(e.target.value)}
-            placeholder="잠수시간"
-          />
+            <div className="planner-inline-input">
+              <label>Time (min)</label>
 
-          <div className="planner-result-chip">
-            최초그룹 <strong>{result.firstGroup || "-"}</strong>
+              <input
+                type="number"
+                value={bottomTime}
+                onChange={(e) => setBottomTime(e.target.value)}
+              />
+            </div>
+
+            <div className="planner-result-chip">
+              <span>최초그룹</span>
+              <strong>{result.firstGroup || "-"}</strong>
+            </div>
           </div>
         </div>
 
-        <div className="planner-inline-row">
-          <label>수면 휴식</label>
+        <div className="planner-step-card">
+          <div className="planner-step-header">
+            <span className="step-badge">STEP 2</span>
+            <strong>수면 휴식</strong>
+          </div>
 
-          <input
-            type="number"
-            value={sit}
-            onChange={(e) => setSit(e.target.value)}
-            placeholder="휴식시간"
-          />
+          <div className="planner-input-row">
+            <div className="planner-inline-input">
+              <label>Time (min)</label>
 
-          <div className="planner-result-chip">
-            조정그룹 <strong>{result.adjustedGroup || "-"}</strong>
+              <input
+                type="number"
+                value={sit}
+                onChange={(e) => setSit(e.target.value)}
+              />
+            </div>
+
+            <div className="planner-result-chip">
+              <span>조정그룹</span>
+              <strong>{result.adjustedGroup || "-"}</strong>
+            </div>
           </div>
         </div>
 
-      </div>
+        <div className="planner-step-card">
+          <div className="planner-step-header">
+            <span className="step-badge">STEP 3</span>
+            <strong>조정된 잠수 시간</strong>
+          </div>
 
-      <div className="table-wrapper">
-        <table className="planner-result-table compact">
-          <thead>
-            <tr>
-              <th>수심</th>
-              <th>RNT</th>
-              <th>AMDT</th>
-            </tr>
-          </thead>
+          <div className="table-wrapper">
+            <table className="planner-result-table compact">
+              <thead>
+                <tr>
+                  <th>Depth (m)</th>
+                  <th>RNT (min)</th>
+                  <th>AMDT (min)</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            {rntRows.map((row) => (
-              <tr key={row.depth}>
-                <td>{row.depth}m</td>
-                <td>{row.rnt}</td>
-                <td>{row.amdt}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              <tbody>
+                {rntRows.map((row) => (
+                  <tr key={row.depth}>
+                    <td>{row.depth}</td>
+                    <td>{row.rnt}</td>
+                    <td>{row.amdt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <p className="table-warning">
-        ※ NAUI 기준 반복다이빙표 참고용입니다.
+        ※ NAUI 기준 반복다이빙표 참고용입니다. 실제 다이빙 계획은 본인 교육기관 표와 다이브컴퓨터를 우선하세요.
       </p>
     </>
   );
