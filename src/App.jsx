@@ -1370,17 +1370,15 @@ function MiniWaterTempCard({ selectedRegion }) {
 function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
   const [weather, setWeather] = useState(null);
 
-  const loadWeather = async (lat, lon) => {
+  const loadWeather = async (nx, ny) => {
     try {
-      const url =
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code` +
-        `&timezone=Asia%2FSeoul`;
+      const response = await fetch(
+        `/api/weather?nx=${nx}&ny=${ny}`
+      );
 
-      const response = await fetch(url);
       const data = await response.json();
 
-      setWeather(data.current || null);
+      setWeather(data);
     } catch {
       setWeather(null);
     }
@@ -1388,21 +1386,12 @@ function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
 
   useEffect(() => {
     const loc = getRegionInfo(selectedRegion);
-    loadWeather(loc.lat, loc.lon);
+
+    loadWeather(loc.nx, loc.ny);
   }, [selectedRegion]);
 
-  const weatherIcon = (code) => {
-    if ([0, 1].includes(code)) return "☀️";
-    if ([2, 3].includes(code)) return "⛅";
-    if ([45, 48].includes(code)) return "🌫️";
-    if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
-    if ([71, 73, 75].includes(code)) return "❄️";
-    if ([95, 96, 99].includes(code)) return "⛈️";
-    return "🌤️";
-  };
-
   return (
-    <div className="quick-card mini-live-card">
+    <div className="quick-card mini-live-card weather-style-card">
       <div className="quick-title-row">
         <div className="quick-icon">🌤️</div>
         <strong>오늘 날씨</strong>
@@ -1425,25 +1414,30 @@ function MiniWeatherCard({ selectedRegion, setSelectedRegion }) {
       </select>
 
       {weather ? (
-        <div className="mini-weather-grid">
-          <div>
-            <b>{weatherIcon(weather.weather_code)}</b>
-            <span>날씨</span>
-            <strong>{weather.temperature_2m}°C</strong>
+        <>
+          <div className="weather-main-row">
+            <div className="weather-main-icon">☀️</div>
+
+            <div className="weather-main-temp">
+              <strong>{weather.temperature}°</strong>
+              <span>{selectedRegion}</span>
+            </div>
           </div>
 
-          <div>
-            <b>💨</b>
-            <span>풍속</span>
-            <strong>{weather.wind_speed_10m}m/s</strong>
-          </div>
+          <div className="weather-sub-grid">
+            <div>
+              <small>습도</small>
+              <strong>{weather.humidity}%</strong>
+            </div>
 
-          <div>
-            <b>💧</b>
-            <span>습도</span>
-            <strong>{weather.relative_humidity_2m}%</strong>
+            <div>
+              <small>풍속</small>
+              <strong>
+                {weather.windDirection} {weather.windSpeed}m/s
+              </strong>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <div className="mini-live-list">
           <span>날씨 정보를 불러오는 중...</span>

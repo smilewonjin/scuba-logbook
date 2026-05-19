@@ -555,3 +555,83 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.get("/api/weather", async (req, res) => {
+  try {
+    const serviceKey = process.env.KMA_API_KEY;
+
+    const nx = req.query.nx || "92";
+    const ny = req.query.ny || "131";
+
+    const now = new Date();
+
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+
+    const baseDate = `${yyyy}${mm}${dd}`;
+
+    let hour = now.getHours();
+
+    if (now.getMinutes() < 45) {
+      hour -= 1;
+    }
+
+    if (hour < 0) {
+      hour = 23;
+    }
+
+    const baseTime = `${String(hour).padStart(2, "0")}30`;
+
+    const url = new URL(
+      "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+    );
+
+    url.searchParams.set("serviceKey", serviceKey);
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("numOfRows", "1000");
+    url.searchParams.set("dataType", "JSON");
+    url.searchParams.set("base_date", baseDate);
+    url.searchParams.set("base_time", baseTime);
+    url.searchParams.set("nx", nx);
+    url.searchParams.set("ny", ny);
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const items =
+      data?.response?.body?.items?.item || [];
+
+    const result = {};
+
+    for (const item of items) {
+      result[item.category] = item.obsrValue;
+    }
+
+    const vec = Number(result.VEC || 0);
+
+    const windDirection = (deg) => {
+      if (deg >= 337.5 || deg < 22.5) return "북";
+      if (deg < 67.5) return "북동";
+      if (deg < 112.5) return "동";
+      if (deg < 157.5) return "남동";
+      if (deg < 202.5) return "남";
+      if (deg < 247.5) return "남서";
+      if (deg < 292.5) return "서";
+      return "북서";
+    };
+
+    res.json({
+      temperature: result.T1H,
+      humidity: result.REH,
+      windSpeed: result.WSD,
+      windDirection: windDirection(vec),
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to load weather",
+    });
+  }
+});
