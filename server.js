@@ -593,6 +593,12 @@ app.get("/api/weather", async (req, res) => {
 
     console.log(text);
 
+    if (!text.startsWith("{")) {
+      return res.status(500).json({
+        message: text,
+      });
+    }
+
     const data = JSON.parse(text);
 
     const items =
