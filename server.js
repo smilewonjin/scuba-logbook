@@ -556,12 +556,13 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
+
 app.get("/api/weather", async (req, res) => {
   try {
     const serviceKey = process.env.KMA_API_KEY;
 
-    const nx = req.query.nx || "92";
-    const ny = req.query.ny || "131";
+    const nx = req.query.nx;
+    const ny = req.query.ny;
 
     const now = new Date();
 
@@ -583,18 +584,16 @@ app.get("/api/weather", async (req, res) => {
 
     const baseTime = `${String(hour).padStart(2, "0")}30`;
 
-    const url = new URL(
-      "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
-    );
-
-    url.searchParams.set("serviceKey", serviceKey);
-    url.searchParams.set("pageNo", "1");
-    url.searchParams.set("numOfRows", "1000");
-    url.searchParams.set("dataType", "JSON");
-    url.searchParams.set("base_date", baseDate);
-    url.searchParams.set("base_time", baseTime);
-    url.searchParams.set("nx", nx);
-    url.searchParams.set("ny", ny);
+    const url =
+      `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst` +
+      `?serviceKey=${serviceKey}` +
+      `&pageNo=1` +
+      `&numOfRows=1000` +
+      `&dataType=JSON` +
+      `&base_date=${baseDate}` +
+      `&base_time=${baseTime}` +
+      `&nx=${nx}` +
+      `&ny=${ny}`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -627,11 +626,12 @@ app.get("/api/weather", async (req, res) => {
       windSpeed: result.WSD,
       windDirection: windDirection(vec),
     });
-  } catch (error) {
-    console.error(error);
+
+  } catch (err) {
+    console.error(err);
 
     res.status(500).json({
-      message: "Failed to load weather",
+      message: "weather load failed",
     });
   }
 });
