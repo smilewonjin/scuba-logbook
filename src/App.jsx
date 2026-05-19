@@ -120,6 +120,8 @@ export default function App() {
   const [geo, setGeo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedRegion, setSelectedRegion] =
+    useState("강릉");
   const [mapSearch, setMapSearch] = useState("");
   const [mapCenter, setMapCenter] = useState({
     lat: 37.835363,
