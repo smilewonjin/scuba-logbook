@@ -120,7 +120,11 @@ export default function App() {
   const [geo, setGeo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState("강릉");
+  const [mapSearch, setMapSearch] = useState("");
+  const [mapCenter, setMapCenter] = useState({
+    lat: 37.835363,
+    lon: 128.8752633,
+  });
 
   const currentPath = window.location.pathname;
   const userPageMatch = currentPath.match(/^\/u\/([^/]+)$/);
@@ -169,6 +173,7 @@ export default function App() {
   };
 
   const loadLogs = async () => {
+  
     setLoading(true);
 
     try {
@@ -198,6 +203,29 @@ export default function App() {
     }
   };
 
+const handleMapSearch = () => {
+  const keyword = mapSearch.trim().toLowerCase();
+
+  if (!keyword) return;
+
+  const found = DIVE_SHOPS.find(
+    (shop) =>
+      shop.name.toLowerCase().includes(keyword) ||
+      shop.region.toLowerCase().includes(keyword)
+  );
+
+  if (found) {
+    setMapCenter({
+      lat: found.lat,
+      lon: found.lon,
+    });
+
+    setSelectedRegion(found.region);
+  } else {
+    alert("검색 결과가 없습니다.");
+  }
+};
+  
   useEffect(() => {
     loadMe();
     loadUsers();
@@ -503,9 +531,19 @@ export default function App() {
               <input
                 type="text"
                 placeholder="다이빙샵 또는 포인트 검색"
+                value={mapSearch}
+                onChange={(e) => setMapSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleMapSearch();
+                  }
+                }}
               />
 
-              <button>
+              <button
+                type="button"
+                onClick={handleMapSearch}
+              >
                 검색
               </button>
             </div>
@@ -514,7 +552,7 @@ export default function App() {
               {geo ? (
                 <iframe
                   title="현재 위치 지도"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${geo.lon - 0.8},${geo.lat - 0.8},${geo.lon + 0.8},${geo.lat + 0.8}&layer=mapnik&marker=${geo.lat},${geo.lon}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter.lon - 0.03},${mapCenter.lat - 0.03},${mapCenter.lon + 0.03},${mapCenter.lat + 0.03}&layer=mapnik&marker=${mapCenter.lat},${mapCenter.lon}`}
                 />
               ) : (
                 <div className="map-placeholder">
