@@ -1256,18 +1256,31 @@ function DivePlanner() {
 }
 
 const REGION_GROUPS = {
-  동해: {
-    고성: { lat: 38.3806, lon: 128.4676, stationKeyword: "고성" },
-    속초: { lat: 38.2070, lon: 128.5918, stationKeyword: "속초" },
-    양양: { lat: 38.0754, lon: 128.6189, stationKeyword: "양양" },
-    강릉: { lat: 37.7519, lon: 128.8761, stationKeyword: "강릉" },
-    동해: { lat: 37.5247, lon: 129.1143, stationKeyword: "동해" },
-    삼척: { lat: 37.4499, lon: 129.1652, stationKeyword: "삼척" },
-    울진: { lat: 36.9931, lon: 129.4005, stationKeyword: "울진" },
-    영덕: { lat: 36.4151, lon: 129.3650, stationKeyword: "영덕" },
-    포항: { lat: 36.0190, lon: 129.3435, stationKeyword: "포항" },
-    경주: { lat: 35.8562, lon: 129.2247, stationKeyword: "경주" },
+동해: {
+  강릉: {
+    lat: 37.7519,
+    lon: 128.8761,
+    stationKeyword: "강릉",
+    nx: 92,
+    ny: 131,
   },
+
+  속초: {
+    lat: 38.2070,
+    lon: 128.5918,
+    stationKeyword: "속초",
+    nx: 87,
+    ny: 140,
+  },
+
+  포항: {
+    lat: 36.0190,
+    lon: 129.3435,
+    stationKeyword: "포항",
+    nx: 102,
+    ny: 94,
+  },
+},
   남해: {
     기장: { lat: 35.2446, lon: 129.2222, stationKeyword: "기장" },
     부산: { lat: 35.1796, lon: 129.0756, stationKeyword: "부산" },
