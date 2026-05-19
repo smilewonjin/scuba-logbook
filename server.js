@@ -548,15 +548,6 @@ app.delete("/api/logs/:rowKey", async (req, res) => {
   }
 });
 
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-
 app.get("/api/weather", async (req, res) => {
   try {
     const serviceKey = process.env.KMA_API_KEY;
@@ -634,4 +625,12 @@ app.get("/api/weather", async (req, res) => {
       message: "weather load failed",
     });
   }
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
