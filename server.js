@@ -575,19 +575,25 @@ app.get("/api/weather", async (req, res) => {
 
     const baseTime = `${String(hour).padStart(2, "0")}30`;
 
-    const url =
-      `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst` +
-      `?serviceKey=${serviceKey}` +
-      `&pageNo=1` +
-      `&numOfRows=1000` +
-      `&dataType=JSON` +
-      `&base_date=${baseDate}` +
-      `&base_time=${baseTime}` +
-      `&nx=${nx}` +
-      `&ny=${ny}`;
+    const url = new URL(
+      "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+    );
+
+    url.searchParams.set("serviceKey", serviceKey);
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("numOfRows", "1000");
+    url.searchParams.set("dataType", "JSON");
+    url.searchParams.set("base_date", baseDate);
+    url.searchParams.set("base_time", baseTime);
+    url.searchParams.set("nx", nx);
+    url.searchParams.set("ny", ny);
 
     const response = await fetch(url);
-    const data = await response.json();
+    const text = await response.text();
+
+    console.log(text);
+
+    const data = JSON.parse(text);
 
     const items =
       data?.response?.body?.items?.item || [];
