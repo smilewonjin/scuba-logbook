@@ -582,24 +582,24 @@ app.get("/api/weather", async (req, res) => {
     url.searchParams.set("serviceKey", serviceKey);
     url.searchParams.set("pageNo", "1");
     url.searchParams.set("numOfRows", "1000");
-    url.searchParams.set("dataType", "XML");
+   url.searchParams.set("dataType", "JSON");
     url.searchParams.set("base_date", baseDate);
     url.searchParams.set("base_time", baseTime);
     url.searchParams.set("nx", nx);
     url.searchParams.set("ny", ny);
 
     const response = await fetch(url);
-    const text = await response.text();
 
-    console.log(text);
+    const data = await response.json();
 
-    if (!text.startsWith("{")) {
-      return res.status(500).json({
-        message: text,
-      });
+    const items =
+      data?.response?.body?.items?.item || [];
+
+    const result = {};
+
+    for (const item of items) {
+      result[item.category] = item.obsrValue;
     }
-
-    const data = JSON.parse(text);
 
     const items =
       data?.response?.body?.items?.item || [];
