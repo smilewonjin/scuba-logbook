@@ -573,7 +573,8 @@ app.get("/api/weather", async (req, res) => {
       hour = 23;
     }
 
-    const baseTime = `${String(hour).padStart(2, "0")}00`;
+    const baseTime =
+      `${String(hour).padStart(2, "0")}00`;
 
     const url = new URL(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
@@ -582,7 +583,7 @@ app.get("/api/weather", async (req, res) => {
     url.searchParams.set("serviceKey", serviceKey);
     url.searchParams.set("pageNo", "1");
     url.searchParams.set("numOfRows", "1000");
-   url.searchParams.set("dataType", "JSON");
+    url.searchParams.set("dataType", "JSON");
     url.searchParams.set("base_date", baseDate);
     url.searchParams.set("base_time", baseTime);
     url.searchParams.set("nx", nx);
@@ -591,15 +592,6 @@ app.get("/api/weather", async (req, res) => {
     const response = await fetch(url);
 
     const data = await response.json();
-
-    const items =
-      data?.response?.body?.items?.item || [];
-
-    const result = {};
-
-    for (const item of items) {
-      result[item.category] = item.obsrValue;
-    }
 
     const items =
       data?.response?.body?.items?.item || [];
@@ -624,9 +616,9 @@ app.get("/api/weather", async (req, res) => {
     };
 
     res.json({
-      temperature: result.T1H,
-      humidity: result.REH,
-      windSpeed: result.WSD,
+      temperature: result.T1H || "-",
+      humidity: result.REH || "-",
+      windSpeed: result.WSD || "-",
       windDirection: windDirection(vec),
     });
 
@@ -635,6 +627,7 @@ app.get("/api/weather", async (req, res) => {
 
     res.status(500).json({
       message: "weather load failed",
+      error: err.message,
     });
   }
 });
