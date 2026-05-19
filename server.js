@@ -573,7 +573,7 @@ app.get("/api/weather", async (req, res) => {
       hour = 23;
     }
 
-    const baseTime = `${String(hour).padStart(2, "0")}30`;
+    const baseTime = `${String(hour).padStart(2, "0")}00`;
 
     const url = new URL(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
@@ -613,14 +613,14 @@ app.get("/api/weather", async (req, res) => {
     const vec = Number(result.VEC || 0);
 
     const windDirection = (deg) => {
-      if (deg >= 337.5 || deg < 22.5) return "북";
-      if (deg < 67.5) return "북동";
-      if (deg < 112.5) return "동";
-      if (deg < 157.5) return "남동";
-      if (deg < 202.5) return "남";
-      if (deg < 247.5) return "남서";
-      if (deg < 292.5) return "서";
-      return "북서";
+      if (deg >= 337.5 || deg < 22.5) return "↑ 북";
+      if (deg < 67.5) return "↗ 북동";
+      if (deg < 112.5) return "→ 동";
+      if (deg < 157.5) return "↘ 남동";
+      if (deg < 202.5) return "↓ 남";
+      if (deg < 247.5) return "↙ 남서";
+      if (deg < 292.5) return "← 서";
+      return "↖ 북서";
     };
 
     res.json({

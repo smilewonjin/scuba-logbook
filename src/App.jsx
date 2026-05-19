@@ -1256,56 +1256,238 @@ function DivePlanner() {
 }
 
 const REGION_GROUPS = {
-동해: {
-  강릉: {
-    lat: 37.7519,
-    lon: 128.8761,
-    stationKeyword: "강릉",
-    nx: 92,
-    ny: 131,
+  동해: {
+    고성: {
+      lat: 38.3806,
+      lon: 128.4676,
+      stationKeyword: "고성",
+      nx: 85,
+      ny: 145,
+    },
+
+    속초: {
+      lat: 38.2070,
+      lon: 128.5918,
+      stationKeyword: "속초",
+      nx: 87,
+      ny: 141,
+    },
+
+    양양: {
+      lat: 38.0754,
+      lon: 128.6189,
+      stationKeyword: "양양",
+      nx: 88,
+      ny: 138,
+    },
+
+    강릉: {
+      lat: 37.7519,
+      lon: 128.8761,
+      stationKeyword: "강릉",
+      nx: 92,
+      ny: 131,
+    },
+
+    동해: {
+      lat: 37.5247,
+      lon: 129.1143,
+      stationKeyword: "동해",
+      nx: 97,
+      ny: 127,
+    },
+
+    삼척: {
+      lat: 37.4499,
+      lon: 129.1652,
+      stationKeyword: "삼척",
+      nx: 98,
+      ny: 125,
+    },
+
+    울진: {
+      lat: 36.9931,
+      lon: 129.4005,
+      stationKeyword: "울진",
+      nx: 102,
+      ny: 115,
+    },
+
+    영덕: {
+      lat: 36.4151,
+      lon: 129.3650,
+      stationKeyword: "영덕",
+      nx: 103,
+      ny: 103,
+    },
+
+    포항: {
+      lat: 36.0190,
+      lon: 129.3435,
+      stationKeyword: "포항",
+      nx: 102,
+      ny: 94,
+    },
+
+    경주: {
+      lat: 35.8562,
+      lon: 129.2247,
+      stationKeyword: "경주",
+      nx: 100,
+      ny: 91,
+    },
   },
 
-  속초: {
-    lat: 38.2070,
-    lon: 128.5918,
-    stationKeyword: "속초",
-    nx: 87,
-    ny: 140,
-  },
-
-  포항: {
-    lat: 36.0190,
-    lon: 129.3435,
-    stationKeyword: "포항",
-    nx: 102,
-    ny: 94,
-  },
-},
   남해: {
-    기장: { lat: 35.2446, lon: 129.2222, stationKeyword: "기장" },
-    부산: { lat: 35.1796, lon: 129.0756, stationKeyword: "부산" },
-    거제: { lat: 34.8806, lon: 128.6211, stationKeyword: "거제" },
-    통영: { lat: 34.8544, lon: 128.4332, stationKeyword: "통영" },
-    남해: { lat: 34.8377, lon: 127.8925, stationKeyword: "남해" },
-    여수: { lat: 34.7604, lon: 127.6622, stationKeyword: "여수" },
-    완도: { lat: 34.3110, lon: 126.7550, stationKeyword: "완도" },
+    기장: {
+      lat: 35.2446,
+      lon: 129.2222,
+      stationKeyword: "기장",
+      nx: 100,
+      ny: 77,
+    },
+
+    부산: {
+      lat: 35.1796,
+      lon: 129.0756,
+      stationKeyword: "부산",
+      nx: 98,
+      ny: 76,
+    },
+
+    거제: {
+      lat: 34.8806,
+      lon: 128.6211,
+      stationKeyword: "거제",
+      nx: 90,
+      ny: 69,
+    },
+
+    통영: {
+      lat: 34.8544,
+      lon: 128.4332,
+      stationKeyword: "통영",
+      nx: 87,
+      ny: 68,
+    },
+
+    남해: {
+      lat: 34.8377,
+      lon: 127.8925,
+      stationKeyword: "남해",
+      nx: 77,
+      ny: 68,
+    },
+
+    여수: {
+      lat: 34.7604,
+      lon: 127.6622,
+      stationKeyword: "여수",
+      nx: 73,
+      ny: 66,
+    },
+
+    완도: {
+      lat: 34.3110,
+      lon: 126.7550,
+      stationKeyword: "완도",
+      nx: 57,
+      ny: 50,
+    },
   },
+
   서해: {
-    인천: { lat: 37.4563, lon: 126.7052, stationKeyword: "인천" },
-    태안: { lat: 36.7457, lon: 126.2978, stationKeyword: "태안" },
-    보령: { lat: 36.3335, lon: 126.6127, stationKeyword: "보령" },
-    군산: { lat: 35.9676, lon: 126.7369, stationKeyword: "군산" },
-    목포: { lat: 34.8118, lon: 126.3922, stationKeyword: "목포" },
+    인천: {
+      lat: 37.4563,
+      lon: 126.7052,
+      stationKeyword: "인천",
+      nx: 55,
+      ny: 124,
+    },
+
+    태안: {
+      lat: 36.7457,
+      lon: 126.2978,
+      stationKeyword: "태안",
+      nx: 67,
+      ny: 100,
+    },
+
+    보령: {
+      lat: 36.3335,
+      lon: 126.6127,
+      stationKeyword: "보령",
+      nx: 54,
+      ny: 100,
+    },
+
+    군산: {
+      lat: 35.9676,
+      lon: 126.7369,
+      stationKeyword: "군산",
+      nx: 56,
+      ny: 92,
+    },
+
+    목포: {
+      lat: 34.8118,
+      lon: 126.3922,
+      stationKeyword: "목포",
+      nx: 50,
+      ny: 67,
+    },
   },
+
   제주도: {
-    제주시: { lat: 33.4996, lon: 126.5312, stationKeyword: "제주" },
-    서귀포: { lat: 33.2541, lon: 126.5601, stationKeyword: "서귀포" },
-    성산: { lat: 33.4589, lon: 126.9425, stationKeyword: "성산" },
-    우도: { lat: 33.5065, lon: 126.9559, stationKeyword: "우도" },
+    제주시: {
+      lat: 33.4996,
+      lon: 126.5312,
+      stationKeyword: "제주",
+      nx: 52,
+      ny: 38,
+    },
+
+    서귀포: {
+      lat: 33.2541,
+      lon: 126.5601,
+      stationKeyword: "서귀포",
+      nx: 52,
+      ny: 33,
+    },
+
+    성산: {
+      lat: 33.4589,
+      lon: 126.9425,
+      stationKeyword: "성산",
+      nx: 60,
+      ny: 38,
+    },
+
+    우도: {
+      lat: 33.5065,
+      lon: 126.9559,
+      stationKeyword: "우도",
+      nx: 61,
+      ny: 39,
+    },
   },
+
   도서: {
-    울릉도: { lat: 37.4844, lon: 130.9057, stationKeyword: "울릉" },
-    독도: { lat: 37.2419, lon: 131.8644, stationKeyword: "독도" },
+    울릉도: {
+      lat: 37.4844,
+      lon: 130.9057,
+      stationKeyword: "울릉",
+      nx: 127,
+      ny: 127,
+    },
+
+    독도: {
+      lat: 37.2419,
+      lon: 131.8644,
+      stationKeyword: "독도",
+      nx: 144,
+      ny: 123,
+    },
   },
 };
 
