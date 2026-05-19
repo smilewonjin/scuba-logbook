@@ -11,6 +11,29 @@ const DIVE_SHOPS = [
     address: "강원특별자치도 강릉시 사천면",
     type: "Shore",
     memo: "동해권 입문 및 교육 다이빙",
+    phone: "010-0000-0000",
+  },
+
+  {
+    id: "munam-dive",
+    name: "문암다이브",
+    region: "속초",
+    lat: 38.215,
+    lon: 128.591,
+    address: "강원특별자치도 속초시",
+    type: "Boat",
+    memo: "문암 대표 포인트",
+  },
+
+  {
+    id: "yangyang-dive",
+    name: "양양다이브센터",
+    region: "양양",
+    lat: 38.065,
+    lon: 128.715,
+    address: "강원특별자치도 양양군",
+    type: "Shore",
+    memo: "남애권 포인트",
   },
 ];
 
@@ -476,6 +499,17 @@ export default function App() {
               </p>
             </div>
 
+            <div className="map-search-box">
+              <input
+                type="text"
+                placeholder="다이빙샵 또는 포인트 검색"
+              />
+
+              <button>
+                검색
+              </button>
+            </div>
+
             <div className="community-map">
               {geo ? (
                 <iframe
@@ -547,6 +581,29 @@ export default function App() {
             <div>
               <strong>❤️ 컨디션 체크</strong>
               <span>건강한 상태에서만 다이빙하세요.</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="section-title">
+              <p>DIVE SHOPS</p>
+              <h2>추천 다이빙샵</h2>
+            </div>
+
+            <div className="user-grid">
+              {DIVE_SHOPS.map((shop) => (
+                <article className="user-card" key={shop.id}>
+                  <strong>{shop.name}</strong>
+
+                  <span>{shop.region}</span>
+
+                  <small>{shop.memo}</small>
+
+                  <small>
+                    📍 {shop.address}
+                  </small>
+                </article>
+              ))}
             </div>
           </section>
 
@@ -728,9 +785,35 @@ export default function App() {
               <Field label="다이빙 포인트 *" name="diveSite" value={form.diveSite} onChange={handleChange} />
               <SelectField label="다이빙 회차" name="diveNumber" value={form.diveNumber} onChange={handleChange} options={["1", "2", "3", "4"]} />
               <Field label="버디" name="buddy" value={form.buddy} onChange={handleChange} />
-              <Field label="다이브샵" name="shop" value={form.shop} onChange={handleChange} />
-            </div>
+              <label>
+                다이브샵
 
+                <select
+                  name="shop"
+                  value={form.shop}
+                  onChange={(e) => {
+                    const selectedShop = DIVE_SHOPS.find(
+                      (shop) => shop.name === e.target.value
+                    );
+
+                    setForm((prev) => ({
+                      ...prev,
+                      shop: e.target.value,
+                      location: selectedShop?.region || prev.location,
+                      diveSite: selectedShop?.name || prev.diveSite,
+                    }));
+                  }}
+                >
+                  <option value="">선택</option>
+
+                  {DIVE_SHOPS.map((shop) => (
+                    <option key={shop.id} value={shop.name}>
+                      {shop.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <h3 className="form-subtitle">시간 / 수면휴식</h3>
             <div className="form-grid">
               <Field label="시작 시간" type="time" name="startTime" value={form.startTime} onChange={handleChange} />

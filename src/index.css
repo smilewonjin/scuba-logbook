@@ -1462,3 +1462,28 @@ button:disabled {
   color: #f8fafc;
   font-size: 14px;
 }
+
+.map-search-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.map-search-box input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+}
+
+.map-search-box button {
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #0ea5e9;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
