@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
 import "./index.css";
 
+const DIVE_SHOPS = [
+  {
+    id: "haewon-dive",
+    name: "해원다이브리조트",
+    region: "강릉",
+    lat: 37.835363,
+    lon: 128.8752633,
+    address: "강원특별자치도 강릉시 사천면",
+    type: "Shore",
+    memo: "동해권 입문 및 교육 다이빙",
+  },
+];
+
 const emptyForm = {
   date: "",
   location: "",
