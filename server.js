@@ -582,7 +582,7 @@ app.get("/api/weather", async (req, res) => {
     url.searchParams.set("serviceKey", serviceKey);
     url.searchParams.set("pageNo", "1");
     url.searchParams.set("numOfRows", "1000");
-    url.searchParams.set("dataType", "JSON");
+    url.searchParams.set("dataType", "XML");
     url.searchParams.set("base_date", baseDate);
     url.searchParams.set("base_time", baseTime);
     url.searchParams.set("nx", nx);
