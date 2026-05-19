@@ -627,7 +627,7 @@ app.get("/api/weather", async (req, res) => {
   }
 });
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
