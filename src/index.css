@@ -1487,3 +1487,42 @@ button:disabled {
   font-weight: 700;
   cursor: pointer;
 }
+
+.shop-table-wrapper {
+  overflow-x: auto;
+}
+
+.shop-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shop-table th,
+.shop-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #334155;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.shop-table th {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.shop-table td {
+  color: white;
+  font-size: 14px;
+}
+
+.map-link {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}

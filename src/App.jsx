@@ -1,42 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./index.css";
 
-const DIVE_SHOPS = [
-  {
-    id: "haewon-dive",
-    name: "해원다이브리조트",
-    region: "강릉",
-    lat: 37.835363,
-    lon: 128.8752633,
-    address: "강원특별자치도 강릉시 사천면",
-    type: "Shore",
-    memo: "동해권 입문 및 교육 다이빙",
-    phone: "010-0000-0000",
-  },
-
-  {
-    id: "munam-dive",
-    name: "문암다이브",
-    region: "속초",
-    lat: 38.215,
-    lon: 128.591,
-    address: "강원특별자치도 속초시",
-    type: "Boat",
-    memo: "문암 대표 포인트",
-  },
-
-  {
-    id: "yangyang-dive",
-    name: "양양다이브센터",
-    region: "양양",
-    lat: 38.065,
-    lon: 128.715,
-    address: "강원특별자치도 양양군",
-    type: "Shore",
-    memo: "남애권 포인트",
-  },
-];
-
 const emptyForm = {
   date: "",
   location: "",
@@ -630,20 +594,49 @@ const handleMapSearch = () => {
               <h2>추천 다이빙샵</h2>
             </div>
 
-            <div className="user-grid">
-              {DIVE_SHOPS.map((shop) => (
-                <article className="user-card" key={shop.id}>
-                  <strong>{shop.name}</strong>
+            <div className="shop-table-wrapper">
+              <table className="shop-table">
+                <thead>
+                  <tr>
+                    <th>샵명</th>
+                    <th>지역</th>
+                    <th>전화번호</th>
+                    <th>대표포인트</th>
+                    <th>길찾기</th>
+                  </tr>
+                </thead>
 
-                  <span>{shop.region}</span>
+                <tbody>
+                  {DIVE_SHOPS.map((shop) => (
+                    <tr key={shop.id}>
+                      <td>
+                        <strong>{shop.name}</strong>
+                      </td>
 
-                  <small>{shop.memo}</small>
+                      <td>{shop.region}</td>
 
-                  <small>
-                    📍 {shop.address}
-                  </small>
-                </article>
-              ))}
+                      <td>{shop.phone}</td>
+
+                      <td>
+                        {Array.isArray(shop.divePoint)
+                          ? shop.divePoint.join(", ")
+                          : shop.divePoint}
+                      </td>
+
+                      <td>
+                        <a
+                          href={`https://map.naver.com/v5/search/${encodeURIComponent(shop.address)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="map-link"
+                        >
+                          🧭 네이버지도
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
 
@@ -1626,6 +1619,34 @@ const REGION_GROUPS = {
     },
   },
 };
+
+const DIVE_SHOPS = [
+  {
+    id: 1,
+
+    name: "해원다이브리조트",
+
+    phone: "010-1234-5678",
+
+    address:
+      "강원특별자치도 강릉시 사천면",
+
+    region: "강릉",
+
+    lat: 37.835363,
+
+    lon: 128.8752633,
+
+    divePoint: [
+      "난파선 (스텔라)",
+    ],
+
+    type: "boat",
+
+    memo:
+      "동해권 입문 및 교육 다이빙",
+  },
+];
 
 function getRegionInfo(region) {
   for (const group of Object.values(REGION_GROUPS)) {
