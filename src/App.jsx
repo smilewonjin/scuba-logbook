@@ -84,13 +84,7 @@ export default function App() {
   const [geo, setGeo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [selectedRegion, setSelectedRegion] =
-    useState("강릉");
-  const [mapSearch, setMapSearch] = useState("");
-  const [mapCenter, setMapCenter] = useState({
-    lat: 37.835363,
-    lon: 128.8752633,
-  });
+  const [selectedRegion, setSelectedRegion] = useState("강릉");
 
   const currentPath = window.location.pathname;
   const userPageMatch = currentPath.match(/^\/u\/([^/]+)$/);
@@ -169,29 +163,7 @@ export default function App() {
     }
   };
 
-const handleMapSearch = () => {
-  const keyword = mapSearch.trim().toLowerCase();
 
-  if (!keyword) return;
-
-  const found = DIVE_SHOPS.find(
-    (shop) =>
-      shop.name.toLowerCase().includes(keyword) ||
-      shop.region.toLowerCase().includes(keyword)
-  );
-
-  if (found) {
-    setMapCenter({
-      lat: found.lat,
-      lon: found.lon,
-    });
-
-    setSelectedRegion(found.region);
-  } else {
-    alert("검색 결과가 없습니다.");
-  }
-};
-  
   useEffect(() => {
     loadMe();
     loadUsers();
@@ -492,43 +464,8 @@ const handleMapSearch = () => {
                 다른 다이버들의 공개 로그북을 둘러볼 수 있습니다.
               </p>
             </div>
-
-            <div className="map-search-box">
-              <input
-                type="text"
-                placeholder="다이빙샵 또는 포인트 검색"
-                value={mapSearch}
-                onChange={(e) => setMapSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleMapSearch();
-                  }
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={handleMapSearch}
-              >
-                검색
-              </button>
-            </div>
-
-            <div className="community-map">
-              {geo ? (
-                <iframe
-                  title="현재 위치 지도"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter.lon - 0.03},${mapCenter.lat - 0.03},${mapCenter.lon + 0.03},${mapCenter.lat + 0.03}&layer=mapnik&marker=${mapCenter.lat},${mapCenter.lon}`}
-                />
-              ) : (
-                <div className="map-placeholder">
-                  <strong>위치 권한을 허용하면</strong>
-                  <span>현재 위치 기반 지도가 표시됩니다.</span>
-                </div>
-              )}
-            </div>
           </section>
-
+          
           <section className="quick-links">
             <a className="quick-card primary-card" href="/me">
               <div className="quick-icon">📘</div>
